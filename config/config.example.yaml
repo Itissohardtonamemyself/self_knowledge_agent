@@ -1,0 +1,82 @@
+project:
+  name: "Self Knowledge Agent"
+  version: "0.1.0"
+  env: "development"
+
+server:
+  host: "127.0.0.1"
+  port: 8000
+  cors_origins:
+    - "http://localhost:5173"
+    - "http://127.0.0.1:5173"
+    - "http://localhost:3000"
+
+paths:
+  data_dir: "./data"
+  documents_dir: "./data/documents"
+  sqlite_dir: "./data/sqlite"
+  vector_store_dir: "./data/vector_store"
+  graph_store_dir: "./data/graph_store"
+  cache_dir: "./data/cache"
+  logs_dir: "./logs"
+  prompts_dir: "./config/prompts"
+
+database:
+  sqlite_url: "sqlite+aiosqlite:///./data/sqlite/agent.db"
+  sqlite_sync_url: "sqlite:///./data/sqlite/agent.db"
+  echo_sql: false
+
+vector_store:
+  provider: "chroma"
+  chroma_persist_dir: "./data/vector_store"
+  default_collection: "chunks_v1"
+  memory_collection: "memories_v1"
+
+embedder:
+  provider: "bge_local"
+  bge_model_name: "BAAI/bge-small-zh-v1.5"
+  bge_device: "cpu"
+  batch_size: 32
+  # openai_provider 配置（如需云端）
+  # openai_api_key: ""
+  # openai_model: "text-embedding-3-small"
+
+llm:
+  provider: "mock"
+  temperature: 0.2
+  max_tokens: 2048
+  # openai:
+  #   api_key: ""
+  #   model: "gpt-4o-mini"
+  # anthropic:
+  #   api_key: ""
+  #   model: "claude-3-5-sonnet-20240620"
+  # ollama:
+  #   base_url: "http://127.0.0.1:11434"
+  #   model: "qwen2.5:7b"
+
+retrieval:
+  vector_top_k: 20
+  rerank_top_k: 6
+  hybrid_alpha: 0.6
+  score_threshold: 0.3
+
+memory:
+  short_term_window: 20
+  long_term_top_k: 3
+
+ingestion:
+  chunk_size: 512
+  chunk_overlap: 64
+  max_threads: 4
+
+privacy:
+  encrypt_sensitive: false
+  master_password: ""
+  mask_sensitive_fields: true
+
+logging:
+  level: "INFO"
+  file: "./logs/app.log"
+  rotation: "10 MB"
+  retention: "7 days"
