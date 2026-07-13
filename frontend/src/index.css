@@ -1,0 +1,140 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'highlight.js/styles/github.min.css';
+
+:root {
+  font-family: "Noto Sans SC", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: light;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Markdown 样式 */
+.markdown-body {
+  font-size: 14px;
+  line-height: 1.75;
+  color: #0f172a;
+}
+.markdown-body h1 { font-size: 1.5rem; font-weight: 700; margin: 1rem 0 0.75rem; font-family: "Noto Serif SC", serif; }
+.markdown-body h2 { font-size: 1.25rem; font-weight: 600; margin: 1rem 0 0.5rem; font-family: "Noto Serif SC", serif; }
+.markdown-body h3 { font-size: 1.1rem; font-weight: 600; margin: 0.75rem 0 0.5rem; }
+.markdown-body p { margin: 0.5rem 0; }
+.markdown-body ul { list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0; }
+.markdown-body ol { list-style: decimal; padding-left: 1.5rem; margin: 0.5rem 0; }
+.markdown-body li { margin: 0.25rem 0; }
+.markdown-body blockquote {
+  border-left: 4px solid #0891b2;
+  padding-left: 1rem;
+  color: #475569;
+  background: #ecfeff;
+  padding: 0.5rem 1rem;
+  border-radius: 0 6px 6px 0;
+  margin: 0.75rem 0;
+}
+.markdown-body code {
+  background: #f1f5f9;
+  color: #be185d;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+.markdown-body pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 0.75rem 0;
+}
+.markdown-body pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.markdown-body table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+}
+.markdown-body th, .markdown-body td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+.markdown-body th {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+.markdown-body a {
+  color: #0891b2;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 通用工具类 */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl2 text-sm font-medium transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-card hover:from-primary-600 hover:to-primary-800 hover:shadow-card-hover active:scale-[0.98];
+  }
+  .btn-accent {
+    @apply btn bg-gradient-to-br from-accent-500 to-accent-700 text-white shadow-card hover:from-accent-600 hover:to-accent-800 hover:shadow-card-hover active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 hover:border-primary-200 hover:text-primary-700;
+  }
+  .btn-danger {
+    @apply btn bg-gradient-to-br from-red-500 to-red-700 text-white hover:from-red-600 hover:to-red-800;
+  }
+  .card {
+    @apply bg-white border border-slate-100 rounded-2xl shadow-card;
+  }
+  .input {
+    @apply w-full px-3 py-2 rounded-xl2 border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:border-primary-400 focus:ring-2 focus:ring-primary-100;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+  .sidebar-item {
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-xl2 text-sm font-medium text-slate-600 transition-all hover:bg-primary-50 hover:text-primary-700 cursor-pointer;
+  }
+  .sidebar-item-active {
+    @apply sidebar-item bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-md hover:from-primary-600 hover:to-primary-700 hover:text-white;
+  }
+}
