@@ -39,9 +39,12 @@ embedder:
   batch_size: 32
 
 llm:
-  provider: "mock"
+  provider: "glm"
   temperature: 0.2
   max_tokens: 2048
+  glm_api_key: ""
+  glm_model: "glm-4.7-flash"
+  glm_base_url: "https://open.bigmodel.cn/api/paas/v4/"
 
 retrieval:
   vector_top_k: 20

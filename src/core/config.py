@@ -64,6 +64,9 @@ class LLMConfig(BaseModel):
     anthropic_model: str = "claude-3-5-sonnet-20240620"
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b"
+    glm_api_key: Optional[str] = None
+    glm_model: str = "glm-4.7-flash"
+    glm_base_url: str = "https://open.bigmodel.cn/api/paas/v4/"
 
 
 class RetrievalConfig(BaseModel):
