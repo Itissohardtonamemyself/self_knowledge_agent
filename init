@@ -1,5 +1,0 @@
-cd c:\Users\15565\Desktop\self_knowledge_agent
-Get-NetTCPConnection -LocalPort 8000 -ErrorAction SilentlyContinue |
-    ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }  #关闭服务
-.\venv\Scripts\python.exe scripts\init_db.py --quick      # 初始化
-.\venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
