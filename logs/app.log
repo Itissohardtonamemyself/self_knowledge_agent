@@ -300,3 +300,803 @@ ModuleNotFoundError: No module named 'aiosqlite'
 2026-07-08 13:05:43 | WARNING  | src.modules.processing.embedder:get_embedder:150 - Embedder bge_local 初始化失败，降级为 MockEmbedder: 加载 BGE Embedding 失败，请安装 sentence-transformers: No module named 'sentence_transformers'
 2026-07-08 14:44:39 | INFO     | src.modules.processing.embedder:get_embedder:143 - 初始化 Embedder Provider: bge_local
 2026-07-08 14:44:39 | WARNING  | src.modules.processing.embedder:get_embedder:150 - Embedder bge_local 初始化失败，降级为 MockEmbedder: 加载 BGE Embedding 失败，请安装 sentence-transformers: No module named 'sentence_transformers'
+2026-07-13 17:57:54 | INFO     | src.db.session:get_engine:17 - 初始化数据库引擎: sqlite+aiosqlite:///./data/sqlite/agent.db
+2026-07-13 17:57:54 | INFO     | src.db.session:create_all_tables:55 - 数据库表创建完成
+2026-07-13 17:57:54 | INFO     | main:lifespan:37 - ✅ Self Knowledge Agent 启动完成: http://127.0.0.1:8000
+2026-07-13 18:02:57 | INFO     | main:lifespan:45 - 🛑 服务已关闭
+2026-07-13 18:05:07 | INFO     | src.db.session:get_engine:17 - 初始化数据库引擎: sqlite+aiosqlite:///./data/sqlite/agent.db
+2026-07-13 18:05:07 | INFO     | src.db.session:create_all_tables:55 - 数据库表创建完成
+2026-07-13 18:05:07 | INFO     | main:lifespan:37 - ✅ Self Knowledge Agent 启动完成: http://127.0.0.1:8000
+2026-07-13 18:35:16 | ERROR    | src.modules.memory.router:list_memories:64 - list_memories error
+Traceback (most recent call last):
+
+  File "D:\self_knowledge_agent\main.py", line 124, in <module>
+    uvicorn.run(
+    │       └ <function run at 0x0000019182962040>
+    └ <module 'uvicorn' from 'D:\\self_knowledge_agent\\venv\\lib\\site-packages\\uvicorn\\__init__.py'>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\main.py", line 593, in run
+    server.run()
+    │      └ <function Server.run at 0x000001918294ADC0>
+    └ <uvicorn.server.Server object at 0x00000191829660A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           │           │    │             │                      │    │      └ <function Config.get_loop_factory at 0x000001918294A3A0>
+           │           │    │             │                      │    └ <uvicorn.config.Config object at 0x0000019182839790>
+           │           │    │             │                      └ <uvicorn.server.Server object at 0x00000191829660A0>
+           │           │    │             └ None
+           │           │    └ <function Server.serve at 0x000001918294AE50>
+           │           └ <uvicorn.server.Server object at 0x00000191829660A0>
+           └ <function asyncio_run at 0x0000019182919B80>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\_compat.py", line 60, in asyncio_run
+    return loop.run_until_complete(main)
+           │    │                  └ <coroutine object Server.serve at 0x000001918294BF40>
+           │    └ <function BaseEventLoop.run_until_complete at 0x00000191FFE48550>
+           └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 634, in run_until_complete
+    self.run_forever()
+    │    └ <function ProactorEventLoop.run_forever at 0x00000191FFEA0EE0>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\windows_events.py", line 321, in run_forever
+    super().run_forever()
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 601, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x00000191FFE4C040>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 1905, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x00000191FF5DDAF0>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183B4FBE0>()>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle <TaskStepMethWrapper object at 0x0000019183B4FBE0>()>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle <TaskStepMethWrapper object at 0x0000019183B4FBE0>()>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183B4FBE0>()>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+                   └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+                 │    │   │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F700>>
+                 │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+                 │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+                 │    └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+                 └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\applications.py", line 1138, in __call__
+    await super().__call__(scope, receive, send)
+                           │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F700>>
+                           │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+                           └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F700>>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+          └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183B8A550>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+          └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183B8A550>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+          │                            │    │    │     │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183B8A550>
+          │                            │    │    │     │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │                            │    │    │     └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    │    └ <starlette.requests.Request object at 0x0000019183B8EAC0>
+          │                            │    └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+          │                            └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183B8A5E0>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183B8A5E0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183B8A5E0>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <bound method Router.app of <fastapi.routing.APIRouter object at 0x00000191829C4B50>>
+          └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+          │     │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183B8A5E0>
+          │     │      │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │     │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │     └ <function Route.handle at 0x00000191FFF9D280>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183B8A5E0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <function request_response.<locals>.app at 0x00000191839D3670>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 121, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+          │                            │    │        │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183B8A5E0>
+          │                            │    │        │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │                            │    │        └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    └ <starlette.requests.Request object at 0x0000019183AA4E20>
+          │                            └ <function request_response.<locals>.app.<locals>.app at 0x0000019183B8A670>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183B8A790>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B4F...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <function request_response.<locals>.app.<locals>.app at 0x0000019183B8A670>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 107, in app
+    response = await f(request)
+                     │ └ <starlette.requests.Request object at 0x0000019183AA4E20>
+                     └ <function get_request_handler.<locals>.app at 0x00000191839D3820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 426, in app
+    raw_response = await run_endpoint_function(
+                         └ <function run_endpoint_function at 0x00000191FFF8F4C0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await dependant.call(**values)
+                 │         │      └ {'db': <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183B5A820>, 'keyword': '', 'status': 'active', 'page':...
+                 │         └ <function list_memories at 0x00000191826DD5E0>
+                 └ Dependant(path_params=[], query_params=[ModelField(field_info=Query(), name='keyword', mode='validation', config=None), Model...
+
+> File "D:\self_knowledge_agent\src\modules\memory\router.py", line 60, in list_memories
+    return ApiResponse.success(await _service.list_long_term_memories(
+           │           │             │        └ <function MemoryService.list_long_term_memories at 0x00000191826C6790>
+           │           │             └ <src.modules.memory.service.MemoryService object at 0x00000191826BB2B0>
+           │           └ <classmethod object at 0x00000191824A4A00>
+           └ <class 'src.schemas.common.ApiResponse'>
+
+  File "D:\self_knowledge_agent\src\modules\memory\service.py", line 93, in list_long_term_memories
+    total_q = select(db.func.count(DbLTM.id)).select_from(DbLTM).where(DbLTM.status == status)
+              │      │             │     │                │            │     │         └ 'active'
+              │      │             │     │                │            │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x0000019182490860>
+              │      │             │     │                │            └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     │                └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x00000191824904A0>
+              │      │             └ <class 'src.db.models.memory.LongTermMemory'>
+              │      └ <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183B5A820>
+              └ <function select at 0x0000019181E64550>
+
+AttributeError: 'AsyncSession' object has no attribute 'func'
+2026-07-13 18:35:16 | ERROR    | src.modules.memory.router:list_memories:64 - list_memories error
+Traceback (most recent call last):
+
+  File "D:\self_knowledge_agent\main.py", line 124, in <module>
+    uvicorn.run(
+    │       └ <function run at 0x0000019182962040>
+    └ <module 'uvicorn' from 'D:\\self_knowledge_agent\\venv\\lib\\site-packages\\uvicorn\\__init__.py'>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\main.py", line 593, in run
+    server.run()
+    │      └ <function Server.run at 0x000001918294ADC0>
+    └ <uvicorn.server.Server object at 0x00000191829660A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           │           │    │             │                      │    │      └ <function Config.get_loop_factory at 0x000001918294A3A0>
+           │           │    │             │                      │    └ <uvicorn.config.Config object at 0x0000019182839790>
+           │           │    │             │                      └ <uvicorn.server.Server object at 0x00000191829660A0>
+           │           │    │             └ None
+           │           │    └ <function Server.serve at 0x000001918294AE50>
+           │           └ <uvicorn.server.Server object at 0x00000191829660A0>
+           └ <function asyncio_run at 0x0000019182919B80>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\_compat.py", line 60, in asyncio_run
+    return loop.run_until_complete(main)
+           │    │                  └ <coroutine object Server.serve at 0x000001918294BF40>
+           │    └ <function BaseEventLoop.run_until_complete at 0x00000191FFE48550>
+           └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 634, in run_until_complete
+    self.run_forever()
+    │    └ <function ProactorEventLoop.run_forever at 0x00000191FFEA0EE0>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\windows_events.py", line 321, in run_forever
+    super().run_forever()
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 601, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x00000191FFE4C040>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 1905, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x00000191FF5DDAF0>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183B5A3A0>()>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle <TaskStepMethWrapper object at 0x0000019183B5A3A0>()>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle <TaskStepMethWrapper object at 0x0000019183B5A3A0>()>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183B5A3A0>()>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+                   └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+                 │    │   │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5AE50>>
+                 │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+                 │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+                 │    └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+                 └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\applications.py", line 1138, in __call__
+    await super().__call__(scope, receive, send)
+                           │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5AE50>>
+                           │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+                           └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5AE50>>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+          └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183D26040>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+          └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183D26040>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+          │                            │    │    │     │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183D26040>
+          │                            │    │    │     │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │                            │    │    │     └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    │    └ <starlette.requests.Request object at 0x0000019183D1F490>
+          │                            │    └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+          │                            └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D260D0>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D260D0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D260D0>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <bound method Router.app of <fastapi.routing.APIRouter object at 0x00000191829C4B50>>
+          └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+          │     │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D260D0>
+          │     │      │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │     │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │     └ <function Route.handle at 0x00000191FFF9D280>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D260D0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <function request_response.<locals>.app at 0x00000191839D3670>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 121, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+          │                            │    │        │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D260D0>
+          │                            │    │        │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │                            │    │        └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    └ <starlette.requests.Request object at 0x0000019183D1F040>
+          │                            └ <function request_response.<locals>.app.<locals>.app at 0x0000019183D26160>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D261F0>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183B5A...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <function request_response.<locals>.app.<locals>.app at 0x0000019183D26160>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 107, in app
+    response = await f(request)
+                     │ └ <starlette.requests.Request object at 0x0000019183D1F040>
+                     └ <function get_request_handler.<locals>.app at 0x00000191839D3820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 426, in app
+    raw_response = await run_endpoint_function(
+                         └ <function run_endpoint_function at 0x00000191FFF8F4C0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await dependant.call(**values)
+                 │         │      └ {'db': <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183D27070>, 'keyword': '', 'status': 'active', 'page':...
+                 │         └ <function list_memories at 0x00000191826DD5E0>
+                 └ Dependant(path_params=[], query_params=[ModelField(field_info=Query(), name='keyword', mode='validation', config=None), Model...
+
+> File "D:\self_knowledge_agent\src\modules\memory\router.py", line 60, in list_memories
+    return ApiResponse.success(await _service.list_long_term_memories(
+           │           │             │        └ <function MemoryService.list_long_term_memories at 0x00000191826C6790>
+           │           │             └ <src.modules.memory.service.MemoryService object at 0x00000191826BB2B0>
+           │           └ <classmethod object at 0x00000191824A4A00>
+           └ <class 'src.schemas.common.ApiResponse'>
+
+  File "D:\self_knowledge_agent\src\modules\memory\service.py", line 93, in list_long_term_memories
+    total_q = select(db.func.count(DbLTM.id)).select_from(DbLTM).where(DbLTM.status == status)
+              │      │             │     │                │            │     │         └ 'active'
+              │      │             │     │                │            │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x0000019182490860>
+              │      │             │     │                │            └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     │                └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x00000191824904A0>
+              │      │             └ <class 'src.db.models.memory.LongTermMemory'>
+              │      └ <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183D27070>
+              └ <function select at 0x0000019181E64550>
+
+AttributeError: 'AsyncSession' object has no attribute 'func'
+2026-07-13 18:35:18 | ERROR    | src.modules.memory.router:list_memories:64 - list_memories error
+Traceback (most recent call last):
+
+  File "D:\self_knowledge_agent\main.py", line 124, in <module>
+    uvicorn.run(
+    │       └ <function run at 0x0000019182962040>
+    └ <module 'uvicorn' from 'D:\\self_knowledge_agent\\venv\\lib\\site-packages\\uvicorn\\__init__.py'>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\main.py", line 593, in run
+    server.run()
+    │      └ <function Server.run at 0x000001918294ADC0>
+    └ <uvicorn.server.Server object at 0x00000191829660A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           │           │    │             │                      │    │      └ <function Config.get_loop_factory at 0x000001918294A3A0>
+           │           │    │             │                      │    └ <uvicorn.config.Config object at 0x0000019182839790>
+           │           │    │             │                      └ <uvicorn.server.Server object at 0x00000191829660A0>
+           │           │    │             └ None
+           │           │    └ <function Server.serve at 0x000001918294AE50>
+           │           └ <uvicorn.server.Server object at 0x00000191829660A0>
+           └ <function asyncio_run at 0x0000019182919B80>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\_compat.py", line 60, in asyncio_run
+    return loop.run_until_complete(main)
+           │    │                  └ <coroutine object Server.serve at 0x000001918294BF40>
+           │    └ <function BaseEventLoop.run_until_complete at 0x00000191FFE48550>
+           └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 634, in run_until_complete
+    self.run_forever()
+    │    └ <function ProactorEventLoop.run_forever at 0x00000191FFEA0EE0>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\windows_events.py", line 321, in run_forever
+    super().run_forever()
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 601, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x00000191FFE4C040>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 1905, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x00000191FF5DDAF0>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183F1C4C0>()>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle <TaskStepMethWrapper object at 0x0000019183F1C4C0>()>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle <TaskStepMethWrapper object at 0x0000019183F1C4C0>()>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183F1C4C0>()>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+                   └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+                 │    │   │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C460>>
+                 │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+                 │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+                 │    └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+                 └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\applications.py", line 1138, in __call__
+    await super().__call__(scope, receive, send)
+                           │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C460>>
+                           │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+                           └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C460>>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+          └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019182962940>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+          └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019182962940>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+          │                            │    │    │     │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019182962940>
+          │                            │    │    │     │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │                            │    │    │     └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    │    └ <starlette.requests.Request object at 0x0000019183F17D60>
+          │                            │    └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+          │                            └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183A081F0>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183A081F0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183A081F0>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <bound method Router.app of <fastapi.routing.APIRouter object at 0x00000191829C4B50>>
+          └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+          │     │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183A081F0>
+          │     │      │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │     │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │     └ <function Route.handle at 0x00000191FFF9D280>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183A081F0>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <function request_response.<locals>.app at 0x00000191839D3670>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 121, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+          │                            │    │        │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183A081F0>
+          │                            │    │        │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │                            │    │        └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    └ <starlette.requests.Request object at 0x0000019183F1C4F0>
+          │                            └ <function request_response.<locals>.app.<locals>.app at 0x0000019183D26B80>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D26D30>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F1C...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <function request_response.<locals>.app.<locals>.app at 0x0000019183D26B80>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 107, in app
+    response = await f(request)
+                     │ └ <starlette.requests.Request object at 0x0000019183F1C4F0>
+                     └ <function get_request_handler.<locals>.app at 0x00000191839D3820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 426, in app
+    raw_response = await run_endpoint_function(
+                         └ <function run_endpoint_function at 0x00000191FFF8F4C0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await dependant.call(**values)
+                 │         │      └ {'db': <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183F1C700>, 'keyword': '', 'status': 'active', 'page':...
+                 │         └ <function list_memories at 0x00000191826DD5E0>
+                 └ Dependant(path_params=[], query_params=[ModelField(field_info=Query(), name='keyword', mode='validation', config=None), Model...
+
+> File "D:\self_knowledge_agent\src\modules\memory\router.py", line 60, in list_memories
+    return ApiResponse.success(await _service.list_long_term_memories(
+           │           │             │        └ <function MemoryService.list_long_term_memories at 0x00000191826C6790>
+           │           │             └ <src.modules.memory.service.MemoryService object at 0x00000191826BB2B0>
+           │           └ <classmethod object at 0x00000191824A4A00>
+           └ <class 'src.schemas.common.ApiResponse'>
+
+  File "D:\self_knowledge_agent\src\modules\memory\service.py", line 93, in list_long_term_memories
+    total_q = select(db.func.count(DbLTM.id)).select_from(DbLTM).where(DbLTM.status == status)
+              │      │             │     │                │            │     │         └ 'active'
+              │      │             │     │                │            │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x0000019182490860>
+              │      │             │     │                │            └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     │                └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x00000191824904A0>
+              │      │             └ <class 'src.db.models.memory.LongTermMemory'>
+              │      └ <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183F1C700>
+              └ <function select at 0x0000019181E64550>
+
+AttributeError: 'AsyncSession' object has no attribute 'func'
+2026-07-13 18:35:19 | ERROR    | src.modules.memory.router:list_memories:64 - list_memories error
+Traceback (most recent call last):
+
+  File "D:\self_knowledge_agent\main.py", line 124, in <module>
+    uvicorn.run(
+    │       └ <function run at 0x0000019182962040>
+    └ <module 'uvicorn' from 'D:\\self_knowledge_agent\\venv\\lib\\site-packages\\uvicorn\\__init__.py'>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\main.py", line 593, in run
+    server.run()
+    │      └ <function Server.run at 0x000001918294ADC0>
+    └ <uvicorn.server.Server object at 0x00000191829660A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\server.py", line 67, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           │           │    │             │                      │    │      └ <function Config.get_loop_factory at 0x000001918294A3A0>
+           │           │    │             │                      │    └ <uvicorn.config.Config object at 0x0000019182839790>
+           │           │    │             │                      └ <uvicorn.server.Server object at 0x00000191829660A0>
+           │           │    │             └ None
+           │           │    └ <function Server.serve at 0x000001918294AE50>
+           │           └ <uvicorn.server.Server object at 0x00000191829660A0>
+           └ <function asyncio_run at 0x0000019182919B80>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\_compat.py", line 60, in asyncio_run
+    return loop.run_until_complete(main)
+           │    │                  └ <coroutine object Server.serve at 0x000001918294BF40>
+           │    └ <function BaseEventLoop.run_until_complete at 0x00000191FFE48550>
+           └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 634, in run_until_complete
+    self.run_forever()
+    │    └ <function ProactorEventLoop.run_forever at 0x00000191FFEA0EE0>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\windows_events.py", line 321, in run_forever
+    super().run_forever()
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 601, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x00000191FFE4C040>
+    └ <ProactorEventLoop running=True closed=False debug=False>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\base_events.py", line 1905, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x00000191FF5DDAF0>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183F151F0>()>
+
+  File "C:\Users\15565\AppData\Local\Programs\Python\Python39\lib\asyncio\events.py", line 80, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle <TaskStepMethWrapper object at 0x0000019183F151F0>()>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle <TaskStepMethWrapper object at 0x0000019183F151F0>()>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle <TaskStepMethWrapper object at 0x0000019183F151F0>()>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\protocols\http\h11_impl.py", line 409, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+                   └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\uvicorn\middleware\proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+                 │    │   │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15490>>
+                 │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+                 │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+                 │    └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+                 └ <uvicorn.middleware.proxy_headers.ProxyHeadersMiddleware object at 0x0000019182966820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\applications.py", line 1138, in __call__
+    await super().__call__(scope, receive, send)
+                           │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15490>>
+                           │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+                           └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\applications.py", line 113, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <bound method RequestResponseCycle.send of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15490>>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+          └ <fastapi.applications.FastAPI object at 0x00000191829C4A30>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183D26A60>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+          └ <starlette.middleware.errors.ServerErrorMiddleware object at 0x0000019183A0D190>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\cors.py", line 85, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183D26A60>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <starlette.middleware.cors.CORSMiddleware object at 0x0000019183A0D130>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+          │                            │    │    │     │      │        └ <function ServerErrorMiddleware.__call__.<locals>._send at 0x0000019183D26A60>
+          │                            │    │    │     │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │                            │    │    │     └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    │    └ <starlette.requests.Request object at 0x0000019183F17280>
+          │                            │    └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+          │                            └ <starlette.middleware.exceptions.ExceptionMiddleware object at 0x0000019183A0D100>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D26790>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D26790>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+          └ <fastapi.middleware.asyncexitstack.AsyncExitStackMiddleware object at 0x0000019183A0D0A0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+          │    │                │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D26790>
+          │    │                │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │    │                └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <bound method Router.app of <fastapi.routing.APIRouter object at 0x00000191829C4B50>>
+          └ <fastapi.routing.APIRouter object at 0x00000191829C4B50>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+          │     │      │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D26790>
+          │     │      │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │     │      └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │     └ <function Route.handle at 0x00000191FFF9D280>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+          │    │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D26790>
+          │    │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │    │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │    └ <function request_response.<locals>.app at 0x00000191839D3670>
+          └ APIRoute(path='/api/v1/memory/long-term', name='list_memories', methods=['GET'])
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 121, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+          │                            │    │        │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D26790>
+          │                            │    │        │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │                            │    │        └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          │                            │    └ <starlette.requests.Request object at 0x0000019183F17790>
+          │                            └ <function request_response.<locals>.app.<locals>.app at 0x0000019183D26940>
+          └ <function wrap_app_handling_exceptions at 0x00000191FFF808B0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+          │   │      │        └ <function wrap_app_handling_exceptions.<locals>.wrapped_app.<locals>.sender at 0x0000019183D265E0>
+          │   │      └ <bound method RequestResponseCycle.receive of <uvicorn.protocols.http.h11_impl.RequestResponseCycle object at 0x0000019183F15...
+          │   └ {'type': 'http', 'asgi': {'version': '3.0', 'spec_version': '2.3'}, 'http_version': '1.1', 'server': ('127.0.0.1', 8000), 'cl...
+          └ <function request_response.<locals>.app.<locals>.app at 0x0000019183D26940>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 107, in app
+    response = await f(request)
+                     │ └ <starlette.requests.Request object at 0x0000019183F17790>
+                     └ <function get_request_handler.<locals>.app at 0x00000191839D3820>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 426, in app
+    raw_response = await run_endpoint_function(
+                         └ <function run_endpoint_function at 0x00000191FFF8F4C0>
+
+  File "D:\self_knowledge_agent\venv\lib\site-packages\fastapi\routing.py", line 314, in run_endpoint_function
+    return await dependant.call(**values)
+                 │         │      └ {'db': <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183F15400>, 'keyword': '', 'status': 'active', 'page':...
+                 │         └ <function list_memories at 0x00000191826DD5E0>
+                 └ Dependant(path_params=[], query_params=[ModelField(field_info=Query(), name='keyword', mode='validation', config=None), Model...
+
+> File "D:\self_knowledge_agent\src\modules\memory\router.py", line 60, in list_memories
+    return ApiResponse.success(await _service.list_long_term_memories(
+           │           │             │        └ <function MemoryService.list_long_term_memories at 0x00000191826C6790>
+           │           │             └ <src.modules.memory.service.MemoryService object at 0x00000191826BB2B0>
+           │           └ <classmethod object at 0x00000191824A4A00>
+           └ <class 'src.schemas.common.ApiResponse'>
+
+  File "D:\self_knowledge_agent\src\modules\memory\service.py", line 93, in list_long_term_memories
+    total_q = select(db.func.count(DbLTM.id)).select_from(DbLTM).where(DbLTM.status == status)
+              │      │             │     │                │            │     │         └ 'active'
+              │      │             │     │                │            │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x0000019182490860>
+              │      │             │     │                │            └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     │                └ <class 'src.db.models.memory.LongTermMemory'>
+              │      │             │     └ <sqlalchemy.orm.attributes.InstrumentedAttribute object at 0x00000191824904A0>
+              │      │             └ <class 'src.db.models.memory.LongTermMemory'>
+              │      └ <sqlalchemy.ext.asyncio.session.AsyncSession object at 0x0000019183F15400>
+              └ <function select at 0x0000019181E64550>
+
+AttributeError: 'AsyncSession' object has no attribute 'func'
+2026-07-13 21:58:52 | INFO     | src.db.session:get_engine:17 - 初始化数据库引擎: sqlite+aiosqlite:///./data/sqlite/agent.db
+2026-07-13 21:58:52 | INFO     | src.db.session:create_all_tables:55 - 数据库表创建完成
+2026-07-13 21:58:52 | INFO     | main:lifespan:37 - ✅ Self Knowledge Agent 启动完成: http://127.0.0.1:8000
+2026-07-13 22:12:33 | INFO     | src.modules.processing.embedder:get_embedder:143 - 初始化 Embedder Provider: bge_local
+2026-07-13 22:12:33 | WARNING  | src.modules.processing.embedder:get_embedder:150 - Embedder bge_local 初始化失败，降级为 MockEmbedder: 加载 BGE Embedding 失败，请安装 sentence-transformers: No module named 'sentence_transformers'

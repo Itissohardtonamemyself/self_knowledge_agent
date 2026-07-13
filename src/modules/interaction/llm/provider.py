@@ -152,6 +152,57 @@ class OllamaProvider(BaseLLMProvider):
             return data.get("response", "")
 
 
+class GLMProvider(BaseLLMProvider):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None,
+                 base_url: Optional[str] = None) -> None:
+        try:
+            from openai import OpenAI
+        except ImportError as e:
+            raise LLMProviderError(f"请安装 openai: {e}") from e
+        self._api_key = api_key or settings.llm.glm_api_key
+        if not self._api_key:
+            raise LLMProviderError("GLM API Key 未配置")
+        self._model = model or settings.llm.glm_model
+        self._base_url = base_url or settings.llm.glm_base_url
+        self._client = OpenAI(api_key=self._api_key, base_url=self._base_url)
+
+    def generate(self, prompt: str, system_prompt: Optional[str] = None,
+                 temperature: Optional[float] = None,
+                 max_tokens: Optional[int] = None) -> str:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        temp = temperature if temperature is not None else settings.llm.temperature
+        mt = max_tokens if max_tokens is not None else settings.llm.max_tokens
+        try:
+            resp = self._client.chat.completions.create(
+                model=self._model, messages=messages, temperature=temp, max_tokens=mt,
+            )
+            return resp.choices[0].message.content or ""
+        except Exception as e:
+            raise LLMProviderError(f"GLM 调用失败: {e}") from e
+
+    async def astream(self, prompt: str, system_prompt: Optional[str] = None,
+                      temperature: Optional[float] = None,
+                      max_tokens: Optional[int] = None) -> AsyncIterable[str]:
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+        temp = temperature if temperature is not None else settings.llm.temperature
+        mt = max_tokens if max_tokens is not None else settings.llm.max_tokens
+        try:
+            stream = self._client.chat.completions.create(
+                model=self._model, messages=messages, temperature=temp, max_tokens=mt, stream=True,
+            )
+            for chunk in stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
+        except Exception as e:
+            raise LLMProviderError(f"GLM stream 失败: {e}") from e
+
+
 @lru_cache(maxsize=1)
 def get_llm_provider() -> BaseLLMProvider:
     provider = settings.llm.provider.lower()
@@ -161,6 +212,8 @@ def get_llm_provider() -> BaseLLMProvider:
             return OpenAIProvider()
         if provider == "ollama":
             return OllamaProvider()
+        if provider == "glm":
+            return GLMProvider()
     except Exception as e:
         log.warning(f"LLM Provider {provider} 初始化失败，降级为 Mock: {e}")
     return MockLLMProvider()
