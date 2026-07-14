@@ -207,12 +207,12 @@ def get_llm_provider() -> BaseLLMProvider:
     provider = settings.llm.provider.lower()
     log.info(f"初始化 LLM Provider: {provider}")
     try:
+        if provider == "glm":
+            return GLMProvider()
         if provider == "openai":
             return OpenAIProvider()
         if provider == "ollama":
             return OllamaProvider()
-        if provider == "glm":
-            return GLMProvider()
     except Exception as e:
         log.warning(f"LLM Provider {provider} 初始化失败，降级为 Mock: {e}")
     return MockLLMProvider()
