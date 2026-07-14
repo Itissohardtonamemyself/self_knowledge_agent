@@ -156,15 +156,14 @@ class GLMProvider(BaseLLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None,
                  base_url: Optional[str] = None) -> None:
         try:
-            from openai import OpenAI
+            from zhipuai import ZhipuAI
         except ImportError as e:
-            raise LLMProviderError(f"请安装 openai: {e}") from e
+            raise LLMProviderError(f"请安装 zhipuai: {e}") from e
         self._api_key = api_key or settings.llm.glm_api_key
         if not self._api_key:
             raise LLMProviderError("GLM API Key 未配置")
         self._model = model or settings.llm.glm_model
-        self._base_url = base_url or settings.llm.glm_base_url
-        self._client = OpenAI(api_key=self._api_key, base_url=self._base_url)
+        self._client = ZhipuAI(api_key=self._api_key)
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None,
                  temperature: Optional[float] = None,
