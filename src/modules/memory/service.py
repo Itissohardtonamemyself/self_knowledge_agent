@@ -4,7 +4,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db.models.user_profile import UserProfile as DbProfile
@@ -90,7 +90,7 @@ class MemoryService:
         if keyword:
             q = q.where(DbLTM.content.like(f"%{keyword}%"))
         q = q.order_by(DbLTM.importance_score.desc(), DbLTM.created_at.desc())
-        total_q = select(db.func.count(DbLTM.id)).select_from(DbLTM).where(DbLTM.status == status)
+        total_q = select(func.count(DbLTM.id)).select_from(DbLTM).where(DbLTM.status == status)
         if keyword:
             total_q = total_q.where(DbLTM.content.like(f"%{keyword}%"))
         total = (await db.execute(total_q)).scalar_one() or 0
