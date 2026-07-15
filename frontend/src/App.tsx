@@ -7,6 +7,7 @@ import Memory from '@/pages/Memory';
 import Processing from '@/pages/Processing';
 import Maintenance from '@/pages/Maintenance';
 import Privacy from '@/pages/Privacy';
+import UserDetail from '@/pages/UserDetail';
 import Login from '@/pages/Login';
 import { useAppStore } from '@/store';
 
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="/processing" element={<Processing />} />
           <Route path="/maintenance" element={<Maintenance />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/user" element={<UserDetail />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
