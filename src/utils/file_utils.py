@@ -18,9 +18,12 @@ def get_file_hash(file_path: str, use_content: bool = True, length: int = 16) ->
             return h.hexdigest()[:length]
         except Exception:
             pass
-    stat = path.stat()
-    raw = f"{str(path).lower()}|{stat.st_size}|{int(stat.st_mtime_ns / 1000)}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:length]
+    try:
+        stat = path.stat()
+        raw = f"{str(path).lower()}|{stat.st_size}|{int(stat.st_mtime_ns / 1000)}"
+        return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:length]
+    except Exception:
+        return hashlib.sha256(file_path.lower().encode("utf-8")).hexdigest()[:length]
 
 
 def ensure_dir(path: str) -> Path:
