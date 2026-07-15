@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...db.models.user import User
-from ...schemas.auth import LoginRequest, RegisterRequest, UserOut
+from ...schemas.auth import LoginRequest, RegisterRequest, UpdateUserRequest, UserOut
 from ...core.exceptions import AppBaseException
 
 
@@ -119,3 +119,38 @@ class AuthService:
                 return user
 
         return None
+
+    async def get_user_by_id(self, db: AsyncSession, user_id: int) -> User:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user:
+            exc = AppBaseException(code="USER_NOT_FOUND", message="用户不存在")
+            exc.status_code = 404
+            raise exc
+        return user
+
+    async def update_user(self, db: AsyncSession, user_id: int, req: UpdateUserRequest) -> User:
+        user = await self.get_user_by_id(db, user_id)
+
+        if req.phone:
+            phone_exists = (await db.execute(select(User).where(User.phone == req.phone, User.id != user_id))).scalar_one_or_none()
+            if phone_exists:
+                exc = AppBaseException(code="PHONE_EXISTS", message="该手机号已被其他用户使用")
+                exc.status_code = 409
+                raise exc
+            user.phone = req.phone
+
+        if req.email:
+            email_exists = (await db.execute(select(User).where(User.email == req.email, User.id != user_id))).scalar_one_or_none()
+            if email_exists:
+                exc = AppBaseException(code="EMAIL_EXISTS", message="该邮箱已被其他用户使用")
+                exc.status_code = 409
+                raise exc
+            user.email = req.email
+
+        if req.name is not None:
+            user.name = req.name
+
+        await db.commit()
+        await db.refresh(user)
+        return user

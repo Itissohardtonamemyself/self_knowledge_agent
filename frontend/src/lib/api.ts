@@ -95,6 +95,9 @@ export const api = {
   register: (payload: { username: string; password: string; phone?: string; email?: string; name?: string }) =>
     request<any>('/register', { method: 'POST', body: JSON.stringify(payload) }),
   logout: () => request<any>('/logout', { method: 'POST' }),
+  getUserInfo: () => request<any>('/user/me'),
+  updateUserInfo: (payload: { name?: string; phone?: string; email?: string }) =>
+    request<any>('/user/me', { method: 'PUT', body: JSON.stringify(payload) }),
 
   // ============ System ============
   health: () => request<any>('/health'),

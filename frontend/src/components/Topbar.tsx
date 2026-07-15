@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { PanelLeft, Github, RefreshCw, Home, LogOut, User, ChevronDown } from 'lucide-react';
+import { PanelLeft, Github, RefreshCw, Home, LogOut, User, ChevronDown, Settings } from 'lucide-react';
 import { useAppStore } from '@/store';
 import { api } from '@/lib/api';
 
@@ -126,6 +126,14 @@ export default function Topbar() {
                   <p className="text-sm font-medium text-slate-900">{user.name || user.username}</p>
                   <p className="text-xs text-slate-500">{user.email || user.phone || '未绑定联系方式'}</p>
                 </div>
+                <Link
+                  to="/profile"
+                  onClick={() => setShowUserMenu(false)}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-primary-600 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  个人中心
+                </Link>
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
