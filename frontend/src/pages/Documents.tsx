@@ -154,6 +154,15 @@ export default function Documents() {
 
   const submitUrl = async () => {
     if (!url.trim()) return;
+    const confirmed = confirm(
+      '⚠️ 爬取网页风险提示\n\n' +
+      '1. 请确保你有权限访问目标网站内容\n' +
+      '2. 爬取行为可能受网站 robots.txt 约束\n' +
+      '3. 请勿爬取敏感信息或违反法律法规的内容\n' +
+      '4. 部分网站可能会阻止自动化访问\n\n' +
+      `确认要爬取以下网页吗？\n${url.trim()}`
+    );
+    if (!confirmed) return;
     setImporting(true);
     try {
       const r = await api.importUrl({ url: url.trim(), title: urlTitle.trim() || undefined, tags: urlTags });

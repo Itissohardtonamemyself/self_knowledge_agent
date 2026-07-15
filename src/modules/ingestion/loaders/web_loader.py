@@ -53,7 +53,7 @@ class WebLoader(BaseDocumentLoader):
         final_title = title or parsed.netloc + parsed.path
         return RawDocument(
             doc_id=did,
-            source_path=url,
+            source_path="",
             source_url=url,
             title=final_title,
             file_type="web",

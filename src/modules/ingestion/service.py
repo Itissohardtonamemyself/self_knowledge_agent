@@ -88,7 +88,7 @@ class IngestionService:
         doc = DbDocument(
             id=raw.doc_id,
             source_path=raw.source_path,
-            title=raw.title or Path(raw.source_path).stem,
+            title=raw.title or (Path(raw.source_path).stem if raw.source_path else raw.doc_id),
             file_type=raw.file_type,
             file_size=raw.file_size,
             chunk_count=len(chunked.chunks),
