@@ -156,15 +156,14 @@ class GLMProvider(BaseLLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None,
                  base_url: Optional[str] = None) -> None:
         try:
-            from openai import OpenAI
+            from zhipuai import ZhipuAI
         except ImportError as e:
-            raise LLMProviderError(f"请安装 openai: {e}") from e
+            raise LLMProviderError(f"请安装 zhipuai: {e}") from e
         self._api_key = api_key or settings.llm.glm_api_key
         if not self._api_key:
             raise LLMProviderError("GLM API Key 未配置")
         self._model = model or settings.llm.glm_model
-        self._base_url = base_url or settings.llm.glm_base_url
-        self._client = OpenAI(api_key=self._api_key, base_url=self._base_url)
+        self._client = ZhipuAI(api_key=self._api_key)
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None,
                  temperature: Optional[float] = None,
@@ -208,12 +207,12 @@ def get_llm_provider() -> BaseLLMProvider:
     provider = settings.llm.provider.lower()
     log.info(f"初始化 LLM Provider: {provider}")
     try:
+        if provider == "glm":
+            return GLMProvider()
         if provider == "openai":
             return OpenAIProvider()
         if provider == "ollama":
             return OllamaProvider()
-        if provider == "glm":
-            return GLMProvider()
     except Exception as e:
         log.warning(f"LLM Provider {provider} 初始化失败，降级为 Mock: {e}")
     return MockLLMProvider()

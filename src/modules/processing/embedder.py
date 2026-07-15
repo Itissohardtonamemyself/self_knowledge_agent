@@ -68,8 +68,21 @@ class BGELocalEmbedder(BaseEmbedder):
             return
         try:
             from sentence_transformers import SentenceTransformer
-            log.info(f"加载 Embedding 模型: {self._cfg_name} (device={self._device})")
-            BGELocalEmbedder._MODEL = SentenceTransformer(self._cfg_name, device=self._device)
+            import os
+            cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
+            local_model_path = os.path.join(cache_dir, f"models--{self._cfg_name.replace('/', '--')}")
+            model_path = self._cfg_name
+            if os.path.exists(local_model_path):
+                snapshots_dir = os.path.join(local_model_path, "snapshots")
+                if os.path.exists(snapshots_dir):
+                    snapshot_dirs = [d for d in os.listdir(snapshots_dir) if os.path.isdir(os.path.join(snapshots_dir, d))]
+                    if snapshot_dirs:
+                        model_path = os.path.join(snapshots_dir, snapshot_dirs[0])
+            log.info(f"加载 Embedding 模型: {self._cfg_name} (device={self._device}, path={model_path})")
+            BGELocalEmbedder._MODEL = SentenceTransformer(
+                model_path, device=self._device,
+                cache_folder=cache_dir,
+            )
             BGELocalEmbedder._MODEL_NAME = self._cfg_name
         except Exception as e:  # pragma: no cover
             raise EmbeddingError(f"加载 BGE Embedding 失败，请安装 sentence-transformers: {e}") from e

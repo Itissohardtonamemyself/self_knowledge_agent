@@ -156,3 +156,34 @@ export interface WsEvent {
   type: 'chat.phase' | 'search.results' | 'chat.token' | 'citations' | 'follow_ups' | 'chat.done' | 'error';
   data: any;
 }
+
+export interface UserOut {
+  id: number;
+  username: string;
+  phone: string | null;
+  email: string | null;
+  name: string | null;
+  is_active: boolean;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LoginRequest {
+  username_or_email_or_phone: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  phone?: string;
+  email?: string;
+  name?: string;
+}
+
+export interface LoginResponse {
+  user: UserOut;
+  token: string;
+  token_expires_at: string;
+}

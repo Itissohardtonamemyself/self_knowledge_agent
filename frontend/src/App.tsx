@@ -7,12 +7,23 @@ import Memory from '@/pages/Memory';
 import Processing from '@/pages/Processing';
 import Maintenance from '@/pages/Maintenance';
 import Privacy from '@/pages/Privacy';
+import Login from '@/pages/Login';
+import { useAppStore } from '@/store';
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const isLoggedIn = useAppStore((s) => s.isLoggedIn);
+  if (!isLoggedIn) {
+    return <Navigate to="/login" replace />;
+  }
+  return <>{children}</>;
+}
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route element={<AppLayout />}>
+        <Route path="/login" element={<Login />} />
+        <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/chat/:conversationId" element={<Chat />} />

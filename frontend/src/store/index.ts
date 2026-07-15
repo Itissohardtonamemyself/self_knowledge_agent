@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import type { ConversationOut, ChatMessage, DocumentOut, UserProfileOut, LongTermMemoryOut } from '@/types';
+import type { ConversationOut, ChatMessage, DocumentOut, UserProfileOut, LongTermMemoryOut, UserOut } from '@/types';
+import { setAuthToken, setStoredUser, clearAuth, getStoredUser } from '@/lib/api';
 
 interface Toast {
   id: number;
@@ -8,6 +9,13 @@ interface Toast {
 }
 
 interface AppState {
+  // Auth
+  user: UserOut | null;
+  isLoggedIn: boolean;
+  setUser: (user: UserOut | null) => void;
+  login: (user: UserOut, token: string) => void;
+  logout: () => void;
+
   // UI
   sidebarOpen: boolean;
   toasts: Toast[];
@@ -68,7 +76,22 @@ interface AppState {
 
 let toastSeq = 1;
 
+const storedUser = getStoredUser();
+
 export const useAppStore = create<AppState>((set, get) => ({
+  user: storedUser,
+  isLoggedIn: !!storedUser,
+  setUser: (user) => set({ user, isLoggedIn: !!user }),
+  login: (user, token) => {
+    setAuthToken(token);
+    setStoredUser(user);
+    set({ user, isLoggedIn: true });
+  },
+  logout: () => {
+    clearAuth();
+    set({ user: null, isLoggedIn: false });
+  },
+
   sidebarOpen: true,
   toasts: [],
   toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),

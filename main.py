@@ -11,12 +11,14 @@ if str(ROOT) not in sys.path:
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 from contextlib import asynccontextmanager
 
 from src.core.config import settings
 from src.core.logging import log
 from src.core.exceptions import AppBaseException, to_http_exception
 from src.db.session import create_all_tables, get_engine
+from src.modules.auth.router import router as auth_router
 from src.modules.ingestion.router import router as ingestion_router
 from src.modules.processing.router import router as processing_router
 from src.modules.memory.router import router as memory_router
@@ -64,13 +66,19 @@ app.add_middleware(
 )
 
 
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={"code": "VALIDATION_ERROR", "message": "参数校验失败", "data": {"errors": exc.errors()}},
+    )
+
+
 @app.exception_handler(AppBaseException)
 async def app_base_exception_handler(request: Request, exc: AppBaseException):
-    http_exc = to_http_exception(exc)
     return JSONResponse(
-        status_code=http_exc.status_code,
-        content={"code": http_exc.detail.get("code"), "message": http_exc.detail.get("message"),
-                 "data": http_exc.detail.get("data") or {}},
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message, "data": exc.data or {}},
     )
 
 
@@ -111,6 +119,7 @@ async def root():
 
 # ========== 路由注册 ==========
 API_PREFIX = "/api/v1"
+app.include_router(auth_router, prefix=API_PREFIX)
 app.include_router(ingestion_router, prefix=API_PREFIX)
 app.include_router(processing_router, prefix=API_PREFIX)
 app.include_router(memory_router, prefix=API_PREFIX)

@@ -1,6 +1,8 @@
 import type { ApiResponse } from '@/types';
 
 const API_BASE = '/api/v1';
+const STORAGE_KEY_TOKEN = 'ska_auth_token';
+const STORAGE_KEY_USER = 'ska_auth_user';
 
 class ApiError extends Error {
   code: string;
@@ -11,6 +13,28 @@ class ApiError extends Error {
   }
 }
 
+export function getAuthToken(): string | null {
+  return localStorage.getItem(STORAGE_KEY_TOKEN);
+}
+
+export function setAuthToken(token: string): void {
+  localStorage.setItem(STORAGE_KEY_TOKEN, token);
+}
+
+export function clearAuth(): void {
+  localStorage.removeItem(STORAGE_KEY_TOKEN);
+  localStorage.removeItem(STORAGE_KEY_USER);
+}
+
+export function getStoredUser(): any | null {
+  const stored = localStorage.getItem(STORAGE_KEY_USER);
+  return stored ? JSON.parse(stored) : null;
+}
+
+export function setStoredUser(user: any): void {
+  localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -18,31 +42,46 @@ async function request<T>(
 ): Promise<T> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const token = getAuthToken();
+  
   try {
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    if (options.body && !(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (options.headers) {
+      Object.assign(headers, options.headers);
+    }
+    
     const res = await fetch(`${API_BASE}${path}`, {
       ...options,
-      headers: {
-        Accept: 'application/json',
-        ...(options.body && !(options.body instanceof FormData)
-          ? { 'Content-Type': 'application/json' }
-          : {}),
-        ...options.headers,
-      },
+      headers,
       signal: controller.signal,
     });
+    
     const text = await res.text();
     let payload: ApiResponse<T>;
+    
     try {
       payload = text ? JSON.parse(text) : ({ code: 'EMPTY', message: '', data: null as any });
     } catch {
       throw new ApiError('PARSE_ERROR', `响应解析失败: ${text.slice(0, 200)}`);
     }
+    
     if (!res.ok || (payload.code && payload.code !== 'SUCCESS')) {
-      throw new ApiError(
+      const apiError = new ApiError(
         payload.code || `HTTP_${res.status}`,
         payload.message || `请求失败 (HTTP ${res.status})`,
       );
+      (apiError as any).status = res.status;
+      throw apiError;
     }
+    
     return payload.data;
   } finally {
     clearTimeout(timeout);
@@ -50,6 +89,13 @@ async function request<T>(
 }
 
 export const api = {
+  // ============ Auth ============
+  login: (payload: { username_or_email_or_phone: string; password: string }) =>
+    request<any>('/login', { method: 'POST', body: JSON.stringify(payload) }),
+  register: (payload: { username: string; password: string; phone?: string; email?: string; name?: string }) =>
+    request<any>('/register', { method: 'POST', body: JSON.stringify(payload) }),
+  logout: () => request<any>('/logout', { method: 'POST' }),
+
   // ============ System ============
   health: () => request<any>('/health'),
 

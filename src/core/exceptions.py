@@ -10,9 +10,16 @@ class AppBaseException(Exception):
     message: str = "服务内部错误"
     data: Optional[Dict[str, Any]] = None
 
-    def __init__(self, message: Optional[str] = None, data: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        message: Optional[str] = None,
+        data: Optional[Dict[str, Any]] = None,
+        code: Optional[str] = None,
+    ) -> None:
         if message:
             self.message = message
+        if code:
+            self.code = code
         self.data = data
         super().__init__(self.message)
 
