@@ -70,25 +70,19 @@ class BGELocalEmbedder(BaseEmbedder):
             from sentence_transformers import SentenceTransformer
             import os
             cache_dir = os.path.expanduser("~/.cache/huggingface/hub")
-            model_cache_path = os.path.join(
-                cache_dir,
-                f"models--{self._cfg_name.replace('/', '--')}",
-                "snapshots"
+            local_model_path = os.path.join(cache_dir, f"models--{self._cfg_name.replace('/', '--')}")
+            model_path = self._cfg_name
+            if os.path.exists(local_model_path):
+                snapshots_dir = os.path.join(local_model_path, "snapshots")
+                if os.path.exists(snapshots_dir):
+                    snapshot_dirs = [d for d in os.listdir(snapshots_dir) if os.path.isdir(os.path.join(snapshots_dir, d))]
+                    if snapshot_dirs:
+                        model_path = os.path.join(snapshots_dir, snapshot_dirs[0])
+            log.info(f"加载 Embedding 模型: {self._cfg_name} (device={self._device}, path={model_path})")
+            BGELocalEmbedder._MODEL = SentenceTransformer(
+                model_path, device=self._device,
+                cache_folder=cache_dir,
             )
-            local_path = None
-            if os.path.exists(model_cache_path):
-                snapshots = [d for d in os.listdir(model_cache_path) if os.path.isdir(os.path.join(model_cache_path, d))]
-                if snapshots:
-                    local_path = os.path.join(model_cache_path, snapshots[0])
-                    if os.path.isfile(os.path.join(local_path, "pytorch_model.bin")) and \
-                       os.path.isfile(os.path.join(local_path, "modules.json")):
-                        log.info(f"从本地缓存加载 Embedding 模型: {local_path} (device={self._device})")
-            
-            if local_path:
-                BGELocalEmbedder._MODEL = SentenceTransformer(local_path, device=self._device)
-            else:
-                log.info(f"从 HuggingFace 加载 Embedding 模型: {self._cfg_name} (device={self._device})")
-                BGELocalEmbedder._MODEL = SentenceTransformer(self._cfg_name, device=self._device)
             BGELocalEmbedder._MODEL_NAME = self._cfg_name
         except Exception as e:  # pragma: no cover
             raise EmbeddingError(f"加载 BGE Embedding 失败，请安装 sentence-transformers: {e}") from e

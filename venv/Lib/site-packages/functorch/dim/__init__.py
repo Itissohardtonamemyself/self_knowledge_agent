@@ -1,10 +1,13 @@
+import dis
+import inspect
+from typing import Sequence, Union
+
 import functorch._C
+
 import torch
 from functorch._C import dim as _C
-
 from .tree_map import tree_flatten, tree_map
 from .wrap_type import wrap_type
-
 
 _C._patch_tensor_class()
 dims, DimList, dimlists = _C.dims, _C.DimList, _C.dimlists
@@ -19,7 +22,6 @@ class DimensionBindError(Exception):
 
 
 from . import op_properties
-
 
 # use dict to avoid writing C++ bindings for set
 pointwise = dict.fromkeys(op_properties.pointwise, True)
@@ -58,7 +60,7 @@ TensorLike = (_Tensor, torch.Tensor)
 
 
 class Dim(_C.Dim, _Tensor):
-    # note that _C.Dim comes before tensor because we want the Dim API for things like size to take precedence.
+    # note that _C.Dim comes before tensor because we want the Dim API for things like size to take precendence.
     # Tensor defines format, but we want to print Dims with special formatting
     __format__ = object.__format__
 

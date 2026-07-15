@@ -8,9 +8,7 @@
 
 #ifdef USE_FBGEMM
 #include <fbgemm/Fbgemm.h>
-C10_DIAGNOSTIC_PUSH_AND_IGNORED_IF_DEFINED("-Winconsistent-missing-destructor-override")
 #include <fbgemm/FbgemmFP16.h>
-C10_DIAGNOSTIC_POP()
 #include <fbgemm/QuantUtils.h>
 
 // The struct for the packed weight matrix (PackBMatrix) and the corresponding
@@ -293,7 +291,9 @@ inline void convert_int8_uint8(
   }
 }
 
-namespace at::native::fbgemm_utils {
+namespace at {
+namespace native {
+namespace fbgemm_utils {
 
 template <int kSpatialDim = 2>
 fbgemm::conv_param_t<kSpatialDim> MakeFbgemmConvParam(
@@ -346,7 +346,9 @@ Tensor ConvertConvWeightsToChannelLastTensor(
     const at::Tensor& src,
     int groups,
     bool transpose);
-} // at::native::namespace fbgemm_utils
+} // namespace fbgemm_utils
+} // namespace native
+} // namespace at
 
 #endif // USE_FBGEMM
 
@@ -364,8 +366,9 @@ struct TORCH_API PackedEmbeddingBagWeight : public EmbeddingPackedParamsBase {
         bit_rate_(bit_rate),
         q_scheme(q_scheme),
         version_(version) {
-    if (!this->packed_w.is_contiguous()) {
-      this->packed_w = this->packed_w.contiguous();
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.Move)
+    if (!packed_w.is_contiguous()) {
+      packed_w = packed_w.contiguous();
     }
   }
 

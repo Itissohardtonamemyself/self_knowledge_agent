@@ -4,12 +4,15 @@ from typing import Optional
 
 import torch
 from torch._export.error import InternalError
+
 from torch.ao.quantization.pt2e.utils import (
     _filter_sym_size_users,
     _find_q_dq_node_for_user,
     _is_valid_annotation,
 )
+
 from torch.ao.quantization.quantizer import QuantizationSpecBase
+
 from torch.fx.passes.infra.pass_base import PassBase, PassResult
 
 
@@ -27,20 +30,12 @@ _QUANTIZE_OPS = [
     torch.ops.quantized_decomposed.quantize_per_tensor.default,
     torch.ops.quantized_decomposed.quantize_per_tensor.tensor,
     torch.ops.quantized_decomposed.quantize_per_channel.default,
-    torch.ops.pt2e_quant.quantize_affine,
 ]
 
 _DEQUANTIZE_OPS = [
     torch.ops.quantized_decomposed.dequantize_per_tensor.default,
     torch.ops.quantized_decomposed.dequantize_per_tensor.tensor,
     torch.ops.quantized_decomposed.dequantize_per_channel.default,
-    torch.ops.pt2e_quant.dequantize_affine,
-]
-
-_CHOOSE_QPARAMS_OPS = [
-    torch.ops.quantized_decomposed.choose_qparams.tensor,
-    torch.ops.quantized_decomposed.choose_qparams_symmetric.tensor,
-    torch.ops.pt2e_quant.choose_qparams_affine,
 ]
 
 
@@ -64,7 +59,10 @@ def _find_choose_qparams_node(node: torch.fx.Node) -> Optional[torch.fx.Node]:
         n = queue.popleft()
         if n.op == "output":
             continue
-        if n.op == "call_function" and n.target in _CHOOSE_QPARAMS_OPS:
+        if (
+            n.op == "call_function"
+            and n.target == torch.ops.quantized_decomposed.choose_qparams.tensor
+        ):
             return n
         for k in n.users.keys():
             queue.append(k)
@@ -138,8 +136,6 @@ def _port_metadata_for_output_quant_nodes(
         return
 
     node_users = _filter_sym_size_users(node)
-    if len(node.users) == 0:
-        return
     if len(node_users) != 1:
         logger.warning(f"Expecting {node} to have single user")  # noqa: G004
     q_node = node_users.pop()

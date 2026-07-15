@@ -5,6 +5,7 @@ from typing_extensions import deprecated
 
 import torch
 import torch.cuda
+
 from torch.autograd import (
     _disable_profiler_legacy,
     _enable_profiler_legacy,
@@ -20,7 +21,6 @@ from torch.autograd.profiler_util import (
     FunctionEvent,
     MEMORY_EVENT_NAME,
 )
-
 
 __all__ = ["profile"]
 
@@ -188,8 +188,10 @@ def _parse_legacy_records(thread_records):
         """Return a tuple for correlating start and end records in `_parse_legacy_records`."""
         return (record.handle(), record.node_id())
 
+    next_id = 0
     start_record = None
     functions = []
+    record_stack = []
 
     # '__start_profile' is not guaranteed to be first, so we must find it here
     for record in itertools.chain.from_iterable(thread_records):

@@ -1,7 +1,8 @@
 import os
-from typing import Union
+from typing import List, Type, Union
 
 from .filesystem import FileSystemReader, FileSystemWriter
+
 from .storage import StorageReader, StorageWriter
 
 
@@ -17,11 +18,11 @@ def _storage_setup(
 
     if not checkpoint_id:
         raise RuntimeError(
-            "`checkpoint_id` must be specified if "
+            "`checkpoint_id` must be specificed if "
             "storage_reader/storage_writer is None."
         )
 
-    targets: list[type[Union[StorageReader, StorageWriter]]] = []
+    targets: List[Type[Union[StorageReader, StorageWriter]]] = []
     if reader:
         targets = [
             FileSystemReader,

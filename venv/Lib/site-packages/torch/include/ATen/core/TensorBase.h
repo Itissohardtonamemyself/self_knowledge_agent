@@ -16,7 +16,7 @@
 #include <c10/util/ExclusivelyOwned.h>
 #include <c10/util/ExclusivelyOwnedTensorTraits.h>
 #include <c10/util/MaybeOwned.h>
-#include <optional>
+#include <c10/util/Optional.h>
 #include <c10/util/intrusive_ptr.h>
 
 #include <ATen/core/NamedTensor.h>
@@ -57,16 +57,16 @@ inline bool variable_excluded_from_dispatch() {
 // NOTE: [Tensor vs. TensorBase]
 //
 // Tensor, being the central data structure in PyTorch, gets used and
-// its header included almost everywhere. Unfortunately this means
+// it's header included almost everywhere. Unfortunately this means
 // every time an operator signature is updated or changed in
 // native_functions.yaml, you (and every other PyTorch developer) need
-// to recompile all of ATen and its dependencies.
+// to recompile all of ATen and it's dependencies.
 //
 // TensorBase aims to break up these header dependencies, and improve
 // incremental build times for all PyTorch developers. TensorBase
 // represents a reference counted handle to TensorImpl, exactly the
 // same as Tensor. However, TensorBase doesn't have code generated
-// methods in its API and thus no dependence on native_functions.yaml.
+// methods in it's API and thus no dependence on native_functions.yaml.
 //
 // Usage tips
 // ----------
@@ -75,9 +75,9 @@ inline bool variable_excluded_from_dispatch() {
 //   native_functions.yaml (direct or indirect).
 // - Tensor inherits from TensorBase, so functions taking
 //   `const TensorBase &` are callable with Tensor as well.
-// - TensorBase can be converted to Tensor with `Tensor(tensor_base)`,
-//   but this requires a reference-count bump. OptionalTensorRef, on
-//   the other hand, can materialize a `const Tensor &` without
+// - TensorBase can be converted to tensor with `Tensor(tensor_base)`,
+//   but this requires a reference-count bump. OptionalTensorRef on
+//   the other hand can materialize a `const Tensor &` without
 //   touching the reference-count.
 class TORCH_API TensorBase {
  public:
@@ -88,7 +88,7 @@ class TORCH_API TensorBase {
   // taken to avoid decrementing this reference count at destruction
   // time. Intended to support MaybeOwnedTraits<Tensor>.
   explicit TensorBase(unsafe_borrow_t, const TensorBase& rhs)
-      : impl_(c10::intrusive_ptr<at::TensorImpl, UndefinedTensorImpl>(rhs.impl_.get(), c10::raw::DontIncreaseRefcount{})) {}
+      : impl_(c10::intrusive_ptr<at::TensorImpl, UndefinedTensorImpl>::reclaim(rhs.impl_.get())) {}
   friend MaybeOwnedTraits<TensorBase>;
 
  public:
@@ -104,7 +104,6 @@ class TORCH_API TensorBase {
   }
   TensorBase(const TensorBase&) = default;
   TensorBase(TensorBase&&) noexcept = default;
-  ~TensorBase() noexcept = default;
 
  public:
   // Creates a new wrapper from TensorImpl. Intentionally a free method because
@@ -148,7 +147,7 @@ class TORCH_API TensorBase {
   const TensorBase& fill_(const c10::Scalar& scalar) const;
   const TensorBase& zero_() const;
 
-  TensorBase to(at::TensorOptions options={}, bool non_blocking=false, bool copy=false, std::optional<at::MemoryFormat> memory_format=std::nullopt) const;
+  TensorBase to(at::TensorOptions options={}, bool non_blocking=false, bool copy=false, std::optional<at::MemoryFormat> memory_format=c10::nullopt) const;
 
   bool is_complex() const {
     return at::isComplexType(this->scalar_type());
@@ -626,7 +625,7 @@ class TORCH_API TensorBase {
     static_assert(N > 0, "accessor is used for indexing tensor, for scalars use *data_ptr<T>()");
     TORCH_CHECK(dim() == N, "TensorAccessor expected ", N, " dims but tensor has ", dim());
     T* ptr = nullptr;
-    if constexpr (std::is_const_v<T>) {
+    if constexpr (std::is_const<T>::value) {
       ptr = const_data_ptr<T>();
     } else {
       ptr = mutable_data_ptr<T>();
@@ -646,7 +645,7 @@ class TORCH_API TensorBase {
     static_assert(N > 0, "accessor is used for indexing tensor, for scalars use *data_ptr<T>()");
     TORCH_CHECK(dim() == N, "TensorAccessor expected ", N, " dims but tensor has ", dim());
     T* ptr = nullptr;
-    if constexpr (std::is_const_v<T>) {
+    if constexpr (std::is_const<T>::value) {
       ptr = const_data_ptr<T>();
     } else {
       ptr = mutable_data_ptr<T>();
@@ -713,7 +712,7 @@ class TORCH_API TensorBase {
   /// // f requires grad, has no operation creating it
   /// @endcode
 
-  /// \fn void backward(const Tensor & gradient={}, std::optional<bool> retain_graph=std::nullopt, bool create_graph=false, std::optional<TensorList> inputs=std::nullopt) const;
+  /// \fn void backward(const Tensor & gradient={}, std::optional<bool> retain_graph=c10::nullopt, bool create_graph=false, std::optional<TensorList> inputs=c10::nullopt) const;
   ///
   /// Computes the gradient of current tensor with respect to graph leaves.
   ///
@@ -926,6 +925,7 @@ inline DeviceIndex get_device(const TensorBase& self) {
 }
 
 template <typename T>
+// NOLINTNEXTLINE(cppcoreguidelines-missing-std-forward)
 auto TensorBase::register_hook(T&& hook) const -> TensorBase::hook_return_void_t<T> {
   // Return the grad argument in case of a hook with void return type to have an
   // std::function with Tensor return type

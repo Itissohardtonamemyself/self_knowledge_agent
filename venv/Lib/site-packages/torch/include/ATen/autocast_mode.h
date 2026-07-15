@@ -113,9 +113,8 @@ TORCH_API inline void set_autocast_gpu_dtype(at::ScalarType dtype) {
     set_autocast_dtype(device_type, dtype);                                                          \
   }
 
-#define AT_FORALL_DEPRECATED_AUTOCAST_BACKENDS(_) \
+#define AT_FORALL_DEPRECATED_AUTOCAST_BAKCNEDS(_) \
   _(cpu, at::kCPU)                                \
-  _(mtia, at::kMTIA)                              \
   _(xpu, at::kXPU)                                \
   _(xla, at::kXLA)                                \
   _(hpu, at::kHPU)                                \
@@ -123,20 +122,7 @@ TORCH_API inline void set_autocast_gpu_dtype(at::ScalarType dtype) {
   _(privateuseone, at::kPrivateUse1)
 
 // deprecated other backend specific autocast APIs
-// NOLINTNEXTLINE(misc-use-internal-linkage)
-AT_FORALL_DEPRECATED_AUTOCAST_BACKENDS(DECLARE_DEPRECATED_AUTOCAST_APIS)
-
-const std::array<at::DeviceType, 10> _AUTOCAST_SUPPORTED_DEVICES{
-    at::kCPU,
-    at::kCUDA,
-    at::kMTIA,
-    at::kMAIA,
-    at::kXPU,
-    at::kIPU,
-    at::kHPU,
-    at::kXLA,
-    at::kPrivateUse1,
-    at::kMPS};
+AT_FORALL_DEPRECATED_AUTOCAST_BAKCNEDS(DECLARE_DEPRECATED_AUTOCAST_APIS)
 
 namespace {
 inline bool is_autocast_eligible(
@@ -149,10 +135,6 @@ inline bool is_autocast_eligible(
     case c10::DeviceType::CPU:
       return (tensor.is_cpu() || tensor.is_mkldnn()) &&
           tensor.is_floating_point();
-    case c10::DeviceType::MTIA:
-      return tensor.is_mtia() && tensor.is_floating_point();
-    case c10::DeviceType::MAIA:
-      return tensor.is_maia() && tensor.is_floating_point();
     case c10::DeviceType::XPU:
       return tensor.is_xpu() && tensor.is_floating_point();
     case c10::DeviceType::IPU:
@@ -163,8 +145,6 @@ inline bool is_autocast_eligible(
       return tensor.is_xla() && tensor.is_floating_point();
     case c10::DeviceType::PrivateUse1:
       return tensor.is_privateuseone() && tensor.is_floating_point();
-    case c10::DeviceType::MPS:
-      return tensor.is_mps() && tensor.is_floating_point();
     default:
       return false;
   }
@@ -178,10 +158,6 @@ inline DispatchKey get_autocast_dispatch_key_from_device_type(
       return DispatchKey::Autocast;
     case c10::DeviceType::CPU:
       return DispatchKey::AutocastCPU;
-    case c10::DeviceType::MTIA:
-      return DispatchKey::AutocastMTIA;
-    case c10::DeviceType::MAIA:
-      return DispatchKey::AutocastMAIA;
     case c10::DeviceType::XPU:
       return DispatchKey::AutocastXPU;
     case c10::DeviceType::IPU:
@@ -192,20 +168,17 @@ inline DispatchKey get_autocast_dispatch_key_from_device_type(
       return DispatchKey::AutocastXLA;
     case c10::DeviceType::PrivateUse1:
       return DispatchKey::AutocastPrivateUse1;
-    case c10::DeviceType::MPS:
-      return DispatchKey::AutocastMPS;
     default:
-      TORCH_CHECK(
-          false,
+      throw std::runtime_error(
           "unknown device type for autocast in get_autocast_dispatch_key_from_device_type");
   }
 }
 
 inline bool is_autocast_available(c10::DeviceType device_type) {
-  if (std::find(
-          _AUTOCAST_SUPPORTED_DEVICES.begin(),
-          _AUTOCAST_SUPPORTED_DEVICES.end(),
-          device_type) != _AUTOCAST_SUPPORTED_DEVICES.end()) {
+  if (device_type == at::kCPU || device_type == at::kCUDA ||
+      device_type == at::kXPU || device_type == at::kIPU ||
+      device_type == at::kHPU || device_type == at::kXLA ||
+      device_type == at::kPrivateUse1) {
     return true;
   } else {
     return false;
@@ -217,8 +190,7 @@ inline at::ScalarType get_lower_precision_fp_from_device_type(
   if (is_autocast_available(device_type)) {
     return get_autocast_dtype(device_type);
   } else {
-    TORCH_CHECK(
-        false,
+    throw std::runtime_error(
         "unknown device type for autocast in get_lower_precision_fp_from_device_type");
   }
 }
@@ -235,7 +207,7 @@ inline at::ScalarType prioritize(
     const Tensor& nextArg,
     c10::DeviceType device_type = c10::DeviceType::CUDA) {
   if (current == at::kDouble) {
-    TORCH_CHECK(false, "promote type is double in at::autocast::prioritize");
+    AT_ERROR("promote type is double in at::autocast::prioritize");
     return current;
   }
   at::ScalarType lower_precision_fp =
@@ -249,8 +221,7 @@ inline at::ScalarType prioritize(
     } else if (current == lower_precision_fp && next == lower_precision_fp) {
       return lower_precision_fp;
     } else {
-      TORCH_CHECK(
-          false, "Unexpected floating ScalarType in at::autocast::prioritize");
+      AT_ERROR("Unexpected floating ScalarType in at::autocast::prioritize");
       return current;
     }
   } else {
@@ -325,7 +296,7 @@ TORCH_API Tensor cached_cast(
     const Tensor& arg,
     c10::DeviceType device_type = c10::DeviceType::CUDA);
 
-// Overload to process std::optional<Tensor>
+// Overload to process optional<Tensor>
 inline std::optional<Tensor> cached_cast(
     at::ScalarType to_type,
     const std::optional<Tensor>& arg,
@@ -333,7 +304,7 @@ inline std::optional<Tensor> cached_cast(
   if (arg.has_value()) {
     return cached_cast(to_type, *arg, device_type);
   } else {
-    return std::nullopt;
+    return c10::nullopt;
   }
 }
 
@@ -737,42 +708,6 @@ copy pasted in from VariableTypeEverything.cpp with appropriate substitutions.
       REDISPATCH_SIGNATURE,                         \
       POLICY)
 
-// KERNEL_MTIA/KERNEL_DIFFERENT_REDISPATCH_SIGNATURE_MTIA
-// registration (OP, POLICY) or (OP, OVERLOAD, POLICY) for AutocastMTIA
-#define KERNEL_MTIA(...) KERNEL(c10::DeviceType::MTIA, __VA_ARGS__)
-
-#define KERNEL_DIFFERENT_REDISPATCH_SIGNATURE_MTIA( \
-    REDISPATCH_FUNC,                                \
-    REGISTER_NAME,                                  \
-    REGISTER_SIGNATURE,                             \
-    REDISPATCH_SIGNATURE,                           \
-    POLICY)                                         \
-  KERNEL_DIFFERENT_REDISPATCH_SIGNATURE(            \
-      c10::DeviceType::MTIA,                        \
-      REDISPATCH_FUNC,                              \
-      REGISTER_NAME,                                \
-      REGISTER_SIGNATURE,                           \
-      REDISPATCH_SIGNATURE,                         \
-      POLICY)
-
-// KERNEL_MAIA/KERNEL_DIFFERENT_REDISPATCH_SIGNATURE_MAIA
-// registration (OP, POLICY) or (OP, OVERLOAD, POLICY) for AutocastMAIA
-#define KERNEL_MAIA(...) KERNEL(c10::DeviceType::MAIA, __VA_ARGS__)
-
-#define KERNEL_DIFFERENT_REDISPATCH_SIGNATURE_MAIA( \
-    REDISPATCH_FUNC,                                \
-    REGISTER_NAME,                                  \
-    REGISTER_SIGNATURE,                             \
-    REDISPATCH_SIGNATURE,                           \
-    POLICY)                                         \
-  KERNEL_DIFFERENT_REDISPATCH_SIGNATURE(            \
-      c10::DeviceType::MAIA,                        \
-      REDISPATCH_FUNC,                              \
-      REGISTER_NAME,                                \
-      REGISTER_SIGNATURE,                           \
-      REDISPATCH_SIGNATURE,                         \
-      POLICY)
-
 // KERNEL_XPU/KERNEL_DIFFERENT_REDISPATCH_SIGNATURE_XPU
 // registration (OP, POLICY) or (OP, OVERLOAD, POLICY) for AutocastXPU
 #define KERNEL_XPU(...) KERNEL(c10::DeviceType::XPU, __VA_ARGS__)
@@ -809,10 +744,6 @@ copy pasted in from VariableTypeEverything.cpp with appropriate substitutions.
       REGISTER_SIGNATURE,                                    \
       REDISPATCH_SIGNATURE,                                  \
       POLICY)
-
-// KERNEL_MPS
-// registration (OP, POLICY) or (OP, OVERLOAD, POLICY) for AutocastMPS
-#define KERNEL_MPS(...) KERNEL(c10::DeviceType::MPS, __VA_ARGS__)
 
 // Op lists for different policies.
 // To make sure other backends can reuse the policy op list.

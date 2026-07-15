@@ -161,7 +161,7 @@ export default function Chat() {
     startStreaming(aid);
 
     const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${proto}//${location.host}/api/v1/ws/chat`;
+    const wsUrl = `${proto}//${location.host}/ws/chat`;
     try {
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;

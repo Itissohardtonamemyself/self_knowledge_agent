@@ -1,11 +1,9 @@
-# mypy: allow-untyped-defs
 import collections
 from collections import defaultdict
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Optional
 
 import torch
 import torch.utils._pytree as pytree
-
 
 aten = torch.ops.aten
 
@@ -49,12 +47,12 @@ def replace_node_with_constant(gm, node, constant, name=None):
 class ConstantFolder(torch.fx.Interpreter):
     def __init__(
         self,
-        gm: torch.fx.GraphModule,
-        skip_constructors: bool = False,
+        gm,
+        skip_constructors=False,
     ):
         super().__init__(gm)
-        self.node_replacements: dict[torch.fx.Node, Any] = {}
-        self.replaced_uses: dict[torch.fx.Node, int] = collections.Counter()
+        self.node_replacements: Dict[torch.fx.Node, Any] = {}
+        self.replaced_uses: Dict[torch.fx.Node, int] = collections.Counter()
         self.unknown_value = object()
         self.skip_constructors: bool = skip_constructors
 
@@ -62,7 +60,7 @@ class ConstantFolder(torch.fx.Interpreter):
         # is the output
         self.user_to_last_uses = self.node_to_last_non_output_use()
 
-    def is_impure(self, node: torch.fx.Node) -> bool:
+    def is_impure(self, node: torch.fx.node.Node):
         if (
             node.target == torch.ops.prims.convert_element_type.default
             and node.args[0].op == "get_attr"  # type: ignore[union-attr]
@@ -75,7 +73,6 @@ class ConstantFolder(torch.fx.Interpreter):
             torch.ops.quantized_decomposed.dequantize_per_channel.default,
             torch.ops.quantized_decomposed.dequantize_per_tensor.default,
             torch.ops.quantized_decomposed.dequantize_per_tensor.tensor,
-            torch.ops.pt2e_quant.dequantize_affine,
         ]:
             # For the pattern fp32_weight -> q -> dq
             # We only folding fp32_weight -> q
@@ -86,9 +83,9 @@ class ConstantFolder(torch.fx.Interpreter):
     def node_to_last_non_output_use(self):
         last_non_output_use = collections.defaultdict(list)
         seen_uses = set()
-        output_node = next(iter(reversed(self.module.graph.nodes)))  # type: ignore[arg-type, union-attr]
+        output_node = next(iter(reversed(self.module.graph.nodes)))
 
-        for node in reversed(self.module.graph.nodes):  # type: ignore[arg-type, union-attr]
+        for node in reversed(self.module.graph.nodes):
             if node.target == "output":
                 continue
 
@@ -196,70 +193,67 @@ class ConstantFolder(torch.fx.Interpreter):
     def add_node_replacement(self, node: torch.fx.Node, tensor: torch.Tensor) -> None:
         self.node_replacements[node] = tensor
 
-    def run(self):  # type: ignore[override]
+    def run(self):
         env = {}
-        for n in self.module.graph.find_nodes(op="placeholder"):  # type: ignore[operator, union-attr]
+        for n in self.module.graph.find_nodes(op="placeholder"):
             env[n] = self.unknown_value
         return super().run(initial_env=env)
 
 
-def constant_fold(
-    gm: torch.fx.GraphModule,
-    constraint_fn: Optional[Callable[[torch.fx.Node], bool]] = None,
-):
-    with torch.utils._python_dispatch._disable_current_modes():
-        cf = ConstantFolder(gm, skip_constructors=True)
-        cf.run()
+@torch.utils._python_dispatch._disable_current_modes()
+def constant_fold(gm, constraint_fn: Optional[Callable[[torch.fx.Node], bool]] = None):
+    cf = ConstantFolder(gm, skip_constructors=True)
+    cf.run()
 
-        for node, constant in cf.node_replacements.items():
-            if constraint_fn is not None and not constraint_fn(node):
-                continue
-            replace_node_with_constant(gm, node, constant)
+    for node, constant in cf.node_replacements.items():
+        if constraint_fn is not None and not constraint_fn(node):
+            continue
+        replace_node_with_constant(gm, node, constant)
 
-        erased_params = []
-        # Get all attr users by looking up the graph instead from node.users, because in this case
-        # _tensor_constant0 and _tensor_constant0_1 are actually refereing to the same tensor.
+    erased_params = []
+    # Get all attr users by looking up the graph instead from node.users, because in this case
+    # _tensor_constant0 and _tensor_constant0_1 are actually refereing to the same tensor.
 
-        #     opcode         name                 target            args                         kwargs
-        # -------------  -------------------  ----------------  ---------------------------  --------
-        # placeholder    arg0_1               arg0              ()                           {}
-        # get_attr       _tensor_constant0    state             ()                           {}
-        # call_function  add                  aten.add.Tensor   (arg0_1, _tensor_constant0)  {}
-        # get_attr       _tensor_constant0_1  state             ()                           {}
-        # call_function  add_                 aten.add_.Tensor  (_tensor_constant0_1, 1)     {}
-        # output         output               output            ([add],)                     {}
+    #     opcode         name                 target            args                         kwargs
+    # -------------  -------------------  ----------------  ---------------------------  --------
+    # placeholder    arg0_1               arg0              ()                           {}
+    # get_attr       _tensor_constant0    state             ()                           {}
+    # call_function  add                  aten.add.Tensor   (arg0_1, _tensor_constant0)  {}
+    # get_attr       _tensor_constant0_1  state             ()                           {}
+    # call_function  add_                 aten.add_.Tensor  (_tensor_constant0_1, 1)     {}
+    # output         output               output            ([add],)                     {}
 
-        get_attr_node_users = defaultdict(list)
-        for node in gm.graph.nodes:
-            if node.op == "get_attr":
-                get_attr_node_users[node.target].extend(node.users.keys())
-        for node in gm.graph.find_nodes(op="get_attr"):
-            if node.op == "get_attr" and len(get_attr_node_users[node.target]) == 0:
-                if hasattr(gm, node.target):
-                    delattr(gm, node.target)
-                erased_params.append(node)
-        for node in erased_params:
-            gm.graph.erase_node(node)
+    get_attr_node_users = defaultdict(list)
+    for node in gm.graph.nodes:
+        if node.op == "get_attr":
+            get_attr_node_users[node.target].extend(node.users.keys())
+    for node in gm.graph.find_nodes(op="get_attr"):
+        if node.op == "get_attr" and len(get_attr_node_users[node.target]) == 0:
+            if hasattr(gm, node.target):
+                delattr(gm, node.target)
+            erased_params.append(node)
+    for node in erased_params:
+        gm.graph.erase_node(node)
 
-        gm.graph.eliminate_dead_code()
-        gm.graph.lint()
-        gm.recompile()
+    gm.graph.eliminate_dead_code()
+    gm.graph.lint()
+    gm.recompile()
 
 
-def constant_graph_tag(gm: torch.fx.GraphModule) -> None:
-    with torch.utils._python_dispatch._disable_current_modes():
-        cf = ConstantFolder(gm, skip_constructors=True)
-        cf.run()
+@torch.utils._python_dispatch._disable_current_modes()
+def constant_graph_tag(gm: torch.fx.GraphModule):
+    cf = ConstantFolder(gm, skip_constructors=True)
+    cf.run()
 
-        for node in gm.graph.nodes:
-            if (
-                node.op == "get_attr"
-                or node in cf.node_replacements
-                or node in cf.replaced_uses
-            ):
-                node.meta[META_TAG] = CONST_MODULE_TAG
-            else:
-                node.meta[META_TAG] = MODULE_TAG
+    for node in gm.graph.nodes:
+        if (
+            node.op == "get_attr"
+            or node in cf.node_replacements
+            or node in cf.replaced_uses
+        ):
+            node.meta[META_TAG] = CONST_MODULE_TAG
+        else:
+            node.meta[META_TAG] = MODULE_TAG
 
 
 def run_and_get_constant_graph(gm: torch.fx.GraphModule) -> torch.fx.GraphModule:
@@ -282,7 +276,7 @@ def run_and_get_constant_graph(gm: torch.fx.GraphModule) -> torch.fx.GraphModule
 
     new_graph = torch.fx.Graph()
 
-    node_remapping: dict[torch.fx.Node, torch.fx.Node] = {}
+    node_remapping: Dict[torch.fx.Node, torch.fx.Node] = {}
     output_nodes = []
     for node in gm.graph.nodes:
         if node.meta[META_TAG] == MODULE_TAG:

@@ -159,7 +159,7 @@ class IListRefTagImpl<IListRefTag::Unboxed, at::OptionalTensorRef>
 
 template <>
 class IListRefTagImpl<IListRefTag::Boxed, at::OptionalTensorRef>
-    : public IListRefTagImplBase<IListRefTag::Boxed, at::OptionalTensorRef, std::optional<at::Tensor>> {
+    : public IListRefTagImplBase<IListRefTag::Boxed, at::OptionalTensorRef, optional<at::Tensor>> {
 
  public:
   /*
@@ -168,9 +168,7 @@ class IListRefTagImpl<IListRefTag::Boxed, at::OptionalTensorRef>
    */
   static IListRefConstRef<at::OptionalTensorRef> iterator_get(
       const typename list_type::const_iterator& it) {
-    C10_DIAGNOSTIC_PUSH_AND_IGNORED_IF_DEFINED("-Wdangling-reference")
     const auto& ivalue = (*it).get();
-    C10_DIAGNOSTIC_POP()
     if (!ivalue.isNone()) {
         const auto& tensor = ivalue.toTensor();
         return (tensor.defined()) ? tensor : at::OptionalTensorRef{};

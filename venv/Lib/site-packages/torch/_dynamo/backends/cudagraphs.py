@@ -1,31 +1,9 @@
 # mypy: ignore-errors
 
-"""
-This module implements CUDA graphs support for TorchDynamo backends.
-
-CUDA graphs allow for capturing and replaying GPU operations, which can significantly
-reduce CPU overhead in GPU-accelerated PyTorch models. This module provides:
-
-- CUDA graph creation and management for both forward and backward passes
-- Input mutation detection and handling
-- Device compatibility checking
-- Stack trace management for debugging
-- Integration with TorchInductor's cudagraph trees
-
-The backend supports two main modes:
-1. cudagraphs: Full CUDA graph support with both forward and backward pass optimization
-2. cudagraphs_inner: Lower-level CUDA graph implementation used for benchmarking
-
-Key components:
-- CudagraphsBackend: Main backend class for CUDA graph integration
-- Mutation detection utilities to ensure graph safety
-- Device mapping and compatibility checks
-- Stack trace collection for debugging
-"""
-
 import functools
+import operator
 from collections import defaultdict
-from typing import Optional
+from typing import Dict, List, Optional
 
 import torch
 from torch._dynamo import config
@@ -36,7 +14,7 @@ from torch._inductor.cudagraph_utils import (
     check_multiple_devices_or_any_cpu_nodes,
     format_default_skip_message,
     get_mutation_stack_trace,
-    get_placeholder_info,
+    get_placeholders,
     log_cudagraph_skip_and_bump_counter,
 )
 from torch._inductor.utils import (
@@ -46,8 +24,8 @@ from torch._inductor.utils import (
     num_fw_fixed_arguments,
     output_node,
 )
-from torch.multiprocessing.reductions import StorageWeakRef
 
+from torch.multiprocessing.reductions import StorageWeakRef
 from .registry import register_backend
 
 
@@ -64,9 +42,8 @@ def find_input_mutations(g):
                 inputs[StorageWeakRef(meta_fk(n.meta)._typed_storage())].add(input_idx)
             input_idx += 1
         elif n.op == "call_function":
-            if not hasattr(n.target, "_schema"):
+            if n.target is operator.getitem:
                 continue
-
             schema = n.target._schema
             for i, arg in enumerate(schema.arguments):
                 if i < len(n.args):
@@ -91,7 +68,7 @@ def find_input_mutations(g):
 
 
 def get_device_node_mapping(gm: torch.fx.GraphModule):
-    device_node_mapping: dict[torch.device, torch.fx.Node] = {}
+    device_node_mapping: Dict[torch.device, torch.fx.Node] = {}
     for n in gm.graph.nodes:
         t = n.meta.get("val", None)
         if isinstance(t, torch.Tensor) and t.device not in device_node_mapping:
@@ -106,7 +83,7 @@ def check_for_mutation_ignore_cuda_graph_managed_tensor(
     if not mutation_indices:
         return None
 
-    placeholders = get_placeholder_info(aot_model.graph)
+    placeholders = [node for node in aot_model.graph.nodes if node.op == "placeholder"]
     return get_mutation_stack_trace(placeholders, mutation_indices)
 
 
@@ -134,7 +111,7 @@ def get_device_index(gm) -> int:
     return device.index
 
 
-def get_stack_traces(gm) -> list[Optional[str]]:
+def get_stack_traces(gm) -> List[Optional[str]]:
     output = output_node(gm)
     assert len(output.args) == 1
     return [
@@ -168,7 +145,7 @@ def cudagraphs(dynamo_model, dynamo_inputs):
             is_backward=False,
             is_inference=False,
             stack_traces=get_stack_traces(aot_model),
-            placeholders=get_placeholder_info(aot_model.graph),
+            placeholders=get_placeholders(aot_model.graph),
             mutated_input_idxs=find_input_mutations(aot_model.graph),
         )
         out._boxed_call = True
@@ -206,7 +183,7 @@ def cudagraphs(dynamo_model, dynamo_inputs):
             is_backward=True,
             is_inference=False,
             stack_traces=get_stack_traces(aot_model),
-            placeholders=get_placeholder_info(aot_model.graph),
+            placeholders=get_placeholders(aot_model.graph),
             mutated_input_idxs=find_input_mutations(aot_model.graph),
         )
         out._boxed_call = True

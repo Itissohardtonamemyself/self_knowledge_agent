@@ -1,9 +1,13 @@
-from typing import Optional
-from typing_extensions import Protocol, runtime_checkable
+from typing import Optional, runtime_checkable
+from typing_extensions import Protocol
 
-from torch.distributed._state_dict_utils import _copy_state_dict, _create_cpu_state_dict
+from torch.distributed._state_dict_utils import (
+    _copy_state_dict,
+    _create_cpu_state_dict,
+    _offload_state_dict_to_cpu,
+)
+
 from torch.distributed.checkpoint.metadata import STATE_DICT_TYPE
-
 
 __all__ = ["AsyncStager", "BlockingAsyncStager"]
 
@@ -24,7 +28,7 @@ class AsyncStager(Protocol):
         case a copy of the entire state dict is created on CPU RAM and returned here, allowing users
         to continue training without risking changes to data which is being serialized.
 
-    2. dcp.save is called on the state_dict returned from stage in parallel. This call is responsible
+    2. dcp.save is called on the state_dict returned from stage in parallel. This call is respondsible
         for serializing the state_dict and writing it to storage.
 
     3. If AsyncStager.should_synchronize_after_execute is True, this method will be called immediately after
@@ -50,7 +54,7 @@ class AsyncStager(Protocol):
     def stage(self, state_dict: STATE_DICT_TYPE) -> STATE_DICT_TYPE:
         """
         Returns a "staged" copy of `state_dict`. The expectation of the staged copy is that it is
-        inoculated from any updates incurred after the stage call is complete.
+        innoculated from any updates incurred after the stage call is complete.
         """
         raise NotImplementedError(
             f"{self.__class__.__name__} must implement stage method"
@@ -61,6 +65,7 @@ class AsyncStager(Protocol):
         In the case `stage` is async in some way, this method should be called to ensure staging
         is complete and it is safe to begin modifying the original `state_dict`
         """
+        pass
 
 
 class BlockingAsyncStager(AsyncStager):
@@ -87,7 +92,7 @@ class BlockingAsyncStager(AsyncStager):
         Args:
             cache_staged_state_dict: Whether to cache the staged state_dict. This option decreases staging latency
                 at the cost of increases memory usage. Additionally, if this parameter is set to True, it's the expectation
-                that the stager is maintained and reused for multiple dcp.async_save calls. Default to False.
+                that the stager is maintained and re-used for multiple dcp.async_save calls. Default to False.
             type_check: Whether to perform a type check during cpu_offload. Defaults to False.
 
         """
@@ -101,9 +106,7 @@ class BlockingAsyncStager(AsyncStager):
         """
 
         if not self.cache_staged_state_dict:
-            staged_state_dict = _create_cpu_state_dict(state_dict)
-            _copy_state_dict(state_dict, staged_state_dict, type_check=self.type_check)
-            return staged_state_dict
+            return _offload_state_dict_to_cpu(state_dict, type_check=self.type_check)
 
         if self.state_dict_cache is None:
             self.state_dict_cache = _create_cpu_state_dict(state_dict, pin_memory=True)
@@ -113,3 +116,4 @@ class BlockingAsyncStager(AsyncStager):
         """
         No-op function, since staging is blocking.
         """
+        pass

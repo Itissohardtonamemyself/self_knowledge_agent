@@ -382,11 +382,26 @@ struct PackedConvWeightsQnnp : public ConvPackedParamsBase<kSpatialDim> {
 
 enum class Activation : uint8_t { NONE = 0, RELU = 1 };
 
+#if defined(__ANDROID__) && !defined(__NDK_MAJOR__)
+template <class T>
+inline float Round(const float x) {
+  return ::nearbyintf(x);
+}
+inline double Round(const double x) {
+  return ::nearbyint(x);
+}
+#else
+template <class T>
+inline T Round(const T x) {
+  return std::nearbyint(x);
+}
+#endif
+
 template<typename T>
 inline T QuantizeValue(float scale, int32_t zero_point, float value) {
   const int32_t qmin = std::numeric_limits<T>::min();
   const int32_t qmax = std::numeric_limits<T>::max();
-  auto r = zero_point + static_cast<int32_t>(std::nearbyint(value / scale));
+  auto r = zero_point + static_cast<int32_t>(Round(value / scale));
   r = std::max(r, qmin);
   r = std::min(r, qmax);
   return static_cast<T>(r);
@@ -413,7 +428,9 @@ inline std::pair<T, T> activationLimits(
   }
 }
 
-namespace at::native::qnnp_avgpool_helper {
+namespace at {
+namespace native {
+namespace qnnp_avgpool_helper {
 Tensor qnnpack_avg_pool2d(
     Tensor input,
     IntArrayRef kernel_size,
@@ -422,10 +439,12 @@ Tensor qnnpack_avg_pool2d(
     bool ceil_mode,
     bool count_include_pad,
     std::optional<int64_t> divisor_override);
-} // namespace at::native::qnnp_avgpool_helper
+} // qnnp_avgpool_helper
+} // namespace native
+} // namespace at
 
 namespace {
-[[maybe_unused]] std::vector<float> generate_requantization_scales(
+C10_UNUSED std::vector<float> generate_requantization_scales(
     const at::Tensor& weight_scales,
     const float input_scale,
     const float output_scale,
@@ -449,11 +468,11 @@ namespace {
   return requant_scales;
 }
 
-[[maybe_unused]] std::pair<std::vector<uint8_t>, at::Tensor>
-make_zero_points_and_scales_tensor(
+C10_UNUSED std::pair<std::vector<uint8_t>, at::Tensor> make_zero_points_and_scales_tensor(
     const at::Tensor& weight_contig,
     bool transpose = false,
-    uint32_t groups = 1) {
+    uint32_t groups = 1
+  ) {
   const int out_ch_idx = transpose ? 1 : 0;
   const auto num_output_channels = weight_contig.size(out_ch_idx) * (transpose ? groups : 1);
   // Add 8 to account for bufferring needed by QNNPACK.

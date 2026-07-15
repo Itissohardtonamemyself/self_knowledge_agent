@@ -11,25 +11,12 @@ import abc
 import time
 from collections import namedtuple
 from functools import wraps
-from typing import Optional
+from typing import Dict, Optional
 from typing_extensions import deprecated
 
-
-__all__ = [
-    "MetricsConfig",
-    "MetricHandler",
-    "ConsoleMetricHandler",
-    "NullMetricHandler",
-    "MetricStream",
-    "configure",
-    "getStream",
-    "prof",
-    "profile",
-    "put_metric",
-    "publish_metric",
-    "get_elapsed_time_ms",
-    "MetricData",
-]
+__all__ = ['MetricsConfig', 'MetricHandler', 'ConsoleMetricHandler', 'NullMetricHandler', 'MetricStream',
+           'configure', 'getStream', 'prof', 'profile', 'put_metric', 'publish_metric', 'get_elapsed_time_ms',
+           'MetricData']
 
 MetricData = namedtuple("MetricData", ["timestamp", "group_name", "name", "value"])
 
@@ -37,7 +24,7 @@ MetricData = namedtuple("MetricData", ["timestamp", "group_name", "name", "value
 class MetricsConfig:
     __slots__ = ["params"]
 
-    def __init__(self, params: Optional[dict[str, str]] = None):
+    def __init__(self, params: Optional[Dict[str, str]] = None):
         self.params = params
         if self.params is None:
             self.params = {}
@@ -72,7 +59,7 @@ class MetricStream:
         )
 
 
-_metrics_map: dict[str, MetricHandler] = {}
+_metrics_map: Dict[str, MetricHandler] = {}
 _default_metrics_handler: MetricHandler = NullMetricHandler()
 
 
@@ -123,7 +110,6 @@ def prof(fn=None, group: str = "torchelastic"):
      def x():
          pass
 
-
      @metrics.prof(group="agent")
      def y():
          pass
@@ -164,7 +150,6 @@ def profile(group=None):
      @metrics.profile("my_metric_group")
      def some_function(<arguments>):
     """
-
     def wrap(func):
         @wraps(func)
         def wrapper(*args, **kwargs):

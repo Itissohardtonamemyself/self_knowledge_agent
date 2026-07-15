@@ -1,27 +1,5 @@
 # mypy: ignore-errors
 
-"""
-This module provides TVM backend integration for TorchDynamo.
-
-Apache TVM is a deep learning compiler framework that can optimize and execute
-models on various hardware backends. This module enables:
-
-- Compilation of PyTorch models to TVM's computation graphs
-- Multiple scheduling options:
-  - Default scheduler
-  - Auto-scheduler for automatic optimization
-  - Meta-schedule for evolutionary search-based tuning
-- Hardware-specific optimizations:
-  - CUDA GPU support
-  - CPU support with LLVM targeting and architecture-specific tuning
-  - Automatic detection of CPU capabilities (AVX2, AVX512)
-- Tensor conversion utilities between PyTorch and TVM formats
-- Configurable optimization levels and tuning trials
-
-The backend can be used with torch.compile():
-    model = torch.compile(model, backend="tvm")
-"""
-
 import functools
 import importlib
 import logging
@@ -32,10 +10,9 @@ from types import MappingProxyType
 from typing import Optional
 
 import torch
-
 from .common import device_from_inputs, fake_tensor_unsupported
-from .registry import register_backend
 
+from .registry import register_backend
 
 log = logging.getLogger(__name__)
 
@@ -85,6 +62,10 @@ def tvm(
             tasks, task_weights = auto_scheduler.extract_tasks(
                 mod["main"], params, target
             )
+            for task in tasks:
+                print(task.compute_dag)
+            else:
+                print("No tasks")
             if len(tasks) != 0:
                 tuner = auto_scheduler.TaskScheduler(tasks, task_weights)
                 if not os.path.exists(log_file):
@@ -201,7 +182,7 @@ def has_tvm():
         return False
 
 
-@functools.cache
+@functools.lru_cache(None)
 def llvm_target():
     if sys.platform == "linux":
         cpuinfo = open("/proc/cpuinfo").read()
