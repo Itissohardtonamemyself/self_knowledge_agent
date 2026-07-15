@@ -1,5 +1,5 @@
 # Python
-\__pycache__
+__pycache__\*
 *.pyc
 *.pyo
 .Python
@@ -12,14 +12,7 @@
 \logs
 *.log
 
-# Config
-config/config.yaml
-
 # IDE
-.trae/
 .vscode/
 .idea/
 .DS_Store
-
-# Misc
-image.png
