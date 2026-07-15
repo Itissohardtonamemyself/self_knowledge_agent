@@ -930,7 +930,7 @@ cp config/config.example.yaml config/config.yaml
 python scripts/init_db.py
 
 # 5. 启动后端服务
-uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
+.\venv\Scripts\python.exe main.py
 ```
 
 ### 12.3 前端启动
