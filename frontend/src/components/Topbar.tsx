@@ -1,6 +1,8 @@
-import { useLocation, Link } from 'react-router-dom';
-import { PanelLeft, Github, RefreshCw, Home } from 'lucide-react';
+import { useState } from 'react';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
+import { PanelLeft, Github, RefreshCw, Home, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAppStore } from '@/store';
+import { api } from '@/lib/api';
 
 const BREADCRUMB_MAP: Record<string, { label: string; parent?: string }> = {
   '/': { label: '仪表盘' },
@@ -14,7 +16,13 @@ const BREADCRUMB_MAP: Record<string, { label: string; parent?: string }> = {
 
 export default function Topbar() {
   const toggle = useAppStore((s) => s.toggleSidebar);
+  const logout = useAppStore((s) => s.logout);
+  const pushToast = useAppStore((s) => s.pushToast);
+  const user = useAppStore((s) => s.user);
   const loc = useLocation();
+  const nav = useNavigate();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   const crumbs = [{ path: '/', label: '首页' }];
   let matched = false;
@@ -28,6 +36,19 @@ export default function Topbar() {
   if (!matched && loc.pathname !== '/') {
     crumbs.push({ path: loc.pathname, label: loc.pathname });
   }
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await api.logout();
+    } catch {
+    } finally {
+      logout();
+      pushToast('success', '已安全登出');
+      nav('/login');
+      setLoggingOut(false);
+    }
+  };
 
   return (
     <header className="h-16 flex items-center justify-between px-4 lg:px-6 bg-white/80 backdrop-blur border-b border-slate-100 sticky top-0 z-20">
@@ -83,6 +104,44 @@ export default function Topbar() {
           </span>
           <span className="text-xs font-medium text-slate-700">服务在线</span>
         </div>
+
+        {user && (
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-slate-100 transition-colors text-slate-700"
+            >
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-accent-500 flex items-center justify-center text-white">
+                <User className="w-4 h-4" />
+              </div>
+              <span className="text-sm font-medium hidden sm:block">
+                {user.name || user.username}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50">
+                <div className="px-4 py-2 border-b border-slate-100">
+                  <p className="text-sm font-medium text-slate-900">{user.name || user.username}</p>
+                  <p className="text-xs text-slate-500">{user.email || user.phone || '未绑定联系方式'}</p>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-red-600 transition-colors"
+                >
+                  {loggingOut ? (
+                    <span className="w-4 h-4 border-2 border-slate-300 border-t-slate-600 rounded-full animate-spin" />
+                  ) : (
+                    <LogOut className="w-4 h-4" />
+                  )}
+                  登出
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
