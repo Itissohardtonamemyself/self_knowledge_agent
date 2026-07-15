@@ -50,6 +50,29 @@ class RegisterRequest(BaseModel):
         return v
 
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = Field(None, min_length=3, max_length=64, description="用户名")
+    email: Optional[str] = Field(None, description="邮箱")
+    phone: Optional[str] = Field(None, description="手机号")
+    name: Optional[str] = Field(None, description="用户姓名")
+
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', v):
+                raise ValueError('邮箱格式不正确')
+        return v
+
+    @field_validator('phone')
+    @classmethod
+    def validate_phone(cls, v: Optional[str]) -> Optional[str]:
+        if v:
+            if not re.match(r'^1[3-9]\d{9}$', v):
+                raise ValueError('手机号格式不正确')
+        return v
+
+
 class LoginResponse(BaseModel):
     user: UserOut
     token: str
