@@ -37,9 +37,10 @@ class VectorRetriever(BaseRetriever):
         self._vs = get_vector_store()
 
     def retrieve(self, query: str, top_k: Optional[int] = None,
-                 where: Optional[dict] = None) -> list[RetrievedChunk]:
+                 where: Optional[dict] = None,
+                 query_vec: Optional[list[float]] = None) -> list[RetrievedChunk]:
         k = top_k or settings.retrieval.vector_top_k
-        qv = self._embedder.embed_query(query)
+        qv = query_vec if query_vec is not None else self._embedder.embed_query(query)
         result = self._vs.search_chunks(qv, top_k=k, where=where)
         chunks: list[RetrievedChunk] = []
         ids = result.get("ids", [[]])[0]
@@ -120,9 +121,10 @@ class HybridRetriever(BaseRetriever):
         self._kw = KeywordRetriever()
 
     def retrieve(self, query: str, top_k: Optional[int] = None,
-                 where: Optional[dict] = None) -> list[RetrievedChunk]:
+                 where: Optional[dict] = None,
+                 query_vec: Optional[list[float]] = None) -> list[RetrievedChunk]:
         k = top_k or settings.retrieval.rerank_top_k * 3
-        vec_results = self._vec.retrieve(query, top_k=max(k, 20))
+        vec_results = self._vec.retrieve(query, top_k=max(k, 20), query_vec=query_vec)
         kw_results = self._kw.retrieve(query, top_k=max(k, 20))
 
         # RRF 融合

@@ -166,29 +166,59 @@ class RAGAgent:
         history_stmt = select(DbMsg).where(DbMsg.conv_id == conv_id).order_by(DbMsg.seq_no)
         history_msgs = list((await db.execute(history_stmt)).scalars().all())
 
-        # 3. 检索
-        if req.mode == "pure_llm":
-            chunks: list[RetrievedChunk] = []
-        else:
+        # 3. 检查向量库是否为空，空库时直接返回模板提示
+        from ...db.vector_store import get_vector_store
+        vs = get_vector_store()
+        chunk_count = vs.count_chunks()
+        if chunk_count == 0 and req.mode != "pure_llm":
+            await self._append_message(db, conv, "user", req.query)
+            answer_text = (
+                "根据当前知识库未找到相关内容。请尝试上传相关文档或换一种提问方式。\n\n"
+                "提示：你可以通过「文档导入」功能添加 PDF、Word、Markdown、TXT 或网页链接，"
+                "系统会自动处理并建立可检索的知识索引。"
+            )
+            latency = int((time.perf_counter() - start) * 1000)
+            tokens = estimate_tokens(req.query) + estimate_tokens(answer_text)
+            await self._append_message(db, conv, "assistant", answer_text, tokens=tokens, latency_ms=latency)
+            if conv.msg_count <= 2:
+                conv.title = req.query[:50]
+            await db.commit()
+            return ChatResponse(
+                conv_id=conv.id,
+                msg_id=uuid.uuid4().hex[:16],
+                answer=answer_text,
+                citations=[],
+                follow_ups=[
+                    "推荐一些我可以上传的文档类型？",
+                    "如何批量导入我的本地文件夹？",
+                    "除了本地文件，还能接入哪些数据源？",
+                ],
+                tokens_used=tokens,
+                latency_ms=latency,
+                mode=req.mode,
+            )
+
+        # 4. 计算查询向量（只计算一次）
+        query_vec = self._embedder.embed_query(req.query)
+
+        # 5. 检索（使用预计算的查询向量）
+        chunks: list[RetrievedChunk] = []
+        if req.mode != "pure_llm":
             chunks = self._retriever.retrieve(
                 req.query, top_k=(req.top_k or settings.retrieval.rerank_top_k) * 3,
+                query_vec=query_vec,
             )
-            # 过滤低于阈值
             chunks = [c for c in chunks if c.score >= settings.retrieval.score_threshold * 0.5]
             chunks = chunks[: settings.retrieval.rerank_top_k]
 
-        # 拒答标记
         no_context = not chunks
 
-        # 4. 画像 + 长期记忆
+        # 6. 画像 + 长期记忆（复用查询向量）
         profile = await self._memory.get_profile(db)
         long_term_memories: list[dict] = []
         try:
             if chunks:
-                from ...db.vector_store import get_vector_store
-                vs = get_vector_store()
-                qv = self._embedder.embed_query(req.query)
-                result = vs.search_memories(qv, top_k=settings.memory.long_term_top_k)
+                result = vs.search_memories(query_vec, top_k=settings.memory.long_term_top_k)
                 ids = result.get("ids", [[]])[0]
                 docs = result.get("documents", [[]])[0]
                 metas = result.get("metadatas", [[]])[0]
@@ -201,10 +231,10 @@ class RAGAgent:
         except Exception as e:
             log.debug(f"长期记忆检索跳过: {e}")
 
-        # 5. 写用户消息到 DB
+        # 7. 写用户消息到 DB
         await self._append_message(db, conv, "user", req.query)
 
-        # 6. LLM 生成
+        # 8. LLM 生成
         context_text, indexed_chunks, profile_text, short_text, long_text = self._build_context(
             chunks, profile, history_msgs, long_term_memories,
         )
@@ -230,21 +260,19 @@ class RAGAgent:
                 if answer_text and len(answer_text) < 1000:
                     pass
 
-        # 7. 解析引用
+        # 9. 解析引用
         answer_clean, citations = self._resolve_citations(answer_text, indexed_chunks)
         if no_context:
-            # search_only 时不强加未找到提示
             pass
 
-        # 8. 建议追问
+        # 10. 建议追问
         follow_ups = self._generate_follow_ups(req.query, indexed_chunks)
         latency = int((time.perf_counter() - start) * 1000)
         tokens = estimate_tokens(req.query) + estimate_tokens(answer_clean)
 
-        # 9. 写助手消息
+        # 11. 写助手消息
         await self._append_message(db, conv, "assistant", answer_clean, refs=citations,
                                    tokens=tokens, latency_ms=latency)
-        # 更新会话标题（首条）
         if conv.msg_count <= 2:
             conv.title = req.query[:50]
         await db.commit()
@@ -269,14 +297,50 @@ class RAGAgent:
         history_stmt = select(DbMsg).where(DbMsg.conv_id == conv_id).order_by(DbMsg.seq_no)
         history_msgs = list((await db.execute(history_stmt)).scalars().all())
 
+        # 检查向量库是否为空，空库时直接返回模板提示
+        from ...db.vector_store import get_vector_store
+        vs = get_vector_store()
+        chunk_count = vs.count_chunks()
+        if chunk_count == 0 and req.mode != "pure_llm":
+            yield {"type": "chat.phase", "data": {"phase": "retrieving"}}
+            yield {"type": "search.results", "data": {"chunks": []}}
+            await self._append_message(db, conv, "user", req.query)
+            answer_text = (
+                "根据当前知识库未找到相关内容。请尝试上传相关文档或换一种提问方式。\n\n"
+                "提示：你可以通过「文档导入」功能添加 PDF、Word、Markdown、TXT 或网页链接，"
+                "系统会自动处理并建立可检索的知识索引。"
+            )
+            for ch in answer_text:
+                yield {"type": "chat.token", "data": {"token": ch}}
+            yield {"type": "citations", "data": {"refs": []}}
+            yield {"type": "follow_ups", "data": {"questions": [
+                "推荐一些我可以上传的文档类型？",
+                "如何批量导入我的本地文件夹？",
+                "除了本地文件，还能接入哪些数据源？",
+            ]}}
+            latency = int((time.perf_counter() - start) * 1000)
+            tokens = estimate_tokens(req.query) + estimate_tokens(answer_text)
+            await self._append_message(db, conv, "assistant", answer_text, tokens=tokens, latency_ms=latency)
+            if conv.msg_count <= 2:
+                conv.title = req.query[:50]
+            await db.commit()
+            yield {"type": "chat.done", "data": {
+                "msg_id": uuid.uuid4().hex[:16], "conv_id": conv.id,
+                "tokens": tokens, "latency_ms": latency, "answer": answer_text,
+            }}
+            return
+
         yield {"type": "chat.phase", "data": {"phase": "retrieving"}}
 
-        # 检索
-        if req.mode == "pure_llm":
-            chunks: list[RetrievedChunk] = []
-        else:
+        # 计算查询向量（只计算一次）
+        query_vec = self._embedder.embed_query(req.query)
+
+        # 检索（使用预计算的查询向量）
+        chunks: list[RetrievedChunk] = []
+        if req.mode != "pure_llm":
             chunks = self._retriever.retrieve(
                 req.query, top_k=(req.top_k or settings.retrieval.rerank_top_k) * 3,
+                query_vec=query_vec,
             )
             chunks = [c for c in chunks if c.score >= settings.retrieval.score_threshold * 0.5]
             chunks = chunks[: settings.retrieval.rerank_top_k]
@@ -295,10 +359,7 @@ class RAGAgent:
         long_term_memories: list[dict] = []
         try:
             if chunks:
-                from ...db.vector_store import get_vector_store
-                vs = get_vector_store()
-                qv = self._embedder.embed_query(req.query)
-                r = vs.search_memories(qv, top_k=settings.memory.long_term_top_k)
+                r = vs.search_memories(query_vec, top_k=settings.memory.long_term_top_k)
                 ids = r.get("ids", [[]])[0]
                 docs = r.get("documents", [[]])[0]
                 for i in range(len(ids)):

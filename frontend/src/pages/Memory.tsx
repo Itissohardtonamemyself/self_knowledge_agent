@@ -137,8 +137,8 @@ export default function Memory() {
         <div className="flex items-center gap-2">
           <span className="text-lg">👤</span>
           <h2 className="font-serif text-lg font-bold text-slate-800">用户画像</h2>
-          <span className="badge bg-primary-50 text-primary-700 ml-auto">
-            {profile ? '已配置' : '首次配置'}
+          <span className={`badge ml-auto ${profile && (profile.name || profile.occupation || profile.learning_style || profile.background || (profile.interests?.length > 0)) ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+            {profile && (profile.name || profile.occupation || profile.learning_style || profile.background || (profile.interests?.length > 0)) ? '已配置' : '未配置'}
           </span>
         </div>
         {loading && !profile ? (

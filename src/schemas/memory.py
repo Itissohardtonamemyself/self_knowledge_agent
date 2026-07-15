@@ -6,7 +6,11 @@ from pydantic import BaseModel, Field
 
 
 class UserProfileOut(BaseModel):
+    name: str = ""
     occupation: str = ""
+    learning_style: str = ""
+    background: str = ""
+    interests: list[str] = Field(default_factory=list)
     domains: list[str] = Field(default_factory=list)
     preferences: dict = Field(default_factory=dict)
     auto_update: bool = True
@@ -18,7 +22,11 @@ class UserProfileOut(BaseModel):
 
 
 class UserProfileUpdate(BaseModel):
+    name: Optional[str] = None
     occupation: Optional[str] = None
+    learning_style: Optional[str] = None
+    background: Optional[str] = None
+    interests: Optional[list[str]] = None
     domains: Optional[list[str]] = None
     preferences: Optional[dict] = None
     auto_update: Optional[bool] = None

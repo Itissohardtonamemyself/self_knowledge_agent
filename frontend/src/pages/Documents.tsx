@@ -29,13 +29,17 @@ type Tab = 'upload' | 'url';
 const STATUS_STYLE: Record<string, string> = {
   pending: 'bg-slate-100 text-slate-600',
   processing: 'bg-accent-100 text-accent-700',
+  completed: 'bg-emerald-100 text-emerald-700',
   indexed: 'bg-emerald-100 text-emerald-700',
+  failed: 'bg-red-100 text-red-700',
   error: 'bg-red-100 text-red-700',
 };
 const STATUS_LABEL: Record<string, string> = {
   pending: '等待',
   processing: '处理中',
+  completed: '已完成',
   indexed: '已索引',
+  failed: '失败',
   error: '失败',
 };
 
@@ -397,7 +401,7 @@ export default function Documents() {
                       </td>
                       <td className="py-3 px-2">
                         <span className={`badge ${STATUS_STYLE[d.status] || ''}`}>
-                          {d.status === 'indexed' ? <CheckCircle2 className="w-3 h-3" /> : d.status === 'error' ? <AlertCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3 animate-spin" />}
+                          {d.status === 'completed' || d.status === 'indexed' ? <CheckCircle2 className="w-3 h-3" /> : d.status === 'failed' || d.status === 'error' ? <AlertCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3 animate-spin" />}
                           {STATUS_LABEL[d.status] || d.status}
                         </span>
                       </td>

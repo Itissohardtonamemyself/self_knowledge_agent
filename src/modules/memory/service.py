@@ -32,9 +32,20 @@ class MemoryService:
             preferences = json.loads(p.preferences_json) if p.preferences_json else {}
         except Exception:
             preferences = {}
+        try:
+            interests = json.loads(p.interests_json) if p.interests_json else []
+        except Exception:
+            interests = []
         return UserProfileOut(
-            occupation=p.occupation, domains=domains, preferences=preferences,
-            auto_update=p.auto_update, custom_prompt=p.custom_prompt,
+            name=p.name,
+            occupation=p.occupation,
+            learning_style=p.learning_style,
+            background=p.background,
+            interests=interests,
+            domains=domains,
+            preferences=preferences,
+            auto_update=p.auto_update,
+            custom_prompt=p.custom_prompt,
             updated_at=p.updated_at,
         )
 
@@ -45,8 +56,16 @@ class MemoryService:
             p = DbProfile(id=1)
             db.add(p)
             await db.flush()
+        if update.name is not None:
+            p.name = update.name
         if update.occupation is not None:
             p.occupation = update.occupation
+        if update.learning_style is not None:
+            p.learning_style = update.learning_style
+        if update.background is not None:
+            p.background = update.background
+        if update.interests is not None:
+            p.interests_json = json.dumps(update.interests, ensure_ascii=False)
         if update.domains is not None:
             p.domains_json = json.dumps(update.domains, ensure_ascii=False)
         if update.preferences is not None:
@@ -61,10 +80,18 @@ class MemoryService:
 
     def format_profile_for_prompt(self, profile: UserProfileOut) -> str:
         lines = []
+        if profile.name:
+            lines.append(f"- 称呼：{profile.name}")
         if profile.occupation:
             lines.append(f"- 职业：{profile.occupation}")
+        if profile.learning_style:
+            lines.append(f"- 学习风格：{profile.learning_style}")
+        if profile.interests:
+            lines.append(f"- 兴趣领域：{', '.join(profile.interests)}")
         if profile.domains:
             lines.append(f"- 关注领域：{', '.join(profile.domains)}")
+        if profile.background:
+            lines.append(f"- 个人背景：{profile.background}")
         if profile.preferences:
             lines.append(f"- 回答偏好：{json.dumps(profile.preferences, ensure_ascii=False)}")
         if profile.custom_prompt:
