@@ -410,7 +410,7 @@ export default function Documents() {
                       </td>
                       <td className="py-3 px-2">
                         <span className={`badge ${STATUS_STYLE[d.status] || ''}`}>
-                          {d.status === 'completed' || d.status === 'indexed' ? <CheckCircle2 className="w-3 h-3" /> : d.status === 'failed' || d.status === 'error' ? <AlertCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3 animate-spin" />}
+                          {d.status === 'indexed' ? <CheckCircle2 className="w-3 h-3" /> : d.status === 'error' ? <AlertCircle className="w-3 h-3" /> : <Loader2 className="w-3 h-3 animate-spin" />}
                           {STATUS_LABEL[d.status] || d.status}
                         </span>
                       </td>

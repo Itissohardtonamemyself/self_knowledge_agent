@@ -25,6 +25,26 @@ class BaseLLMProvider(ABC):
         for ch in text:
             yield ch
 
+    def ping(self, timeout: float = 30.0) -> bool:
+        """测试大模型是否可用，返回 True 表示可用"""
+        import time
+        start = time.perf_counter()
+        try:
+            result = self.generate("ping", max_tokens=10)
+            elapsed = (time.perf_counter() - start) * 1000
+            if result is not None and len(result) > 0:
+                log.info(f"[LLM] ping 成功: 延迟 {elapsed:.2f}ms")
+                return True
+            log.error(f"[LLM] ping 失败: 返回空结果")
+            return False
+        except Exception as e:
+            elapsed = (time.perf_counter() - start) * 1000
+            if elapsed >= timeout * 1000:
+                log.error(f"[LLM] ping 超时: 超过 {timeout}秒")
+            else:
+                log.error(f"[LLM] ping 失败: {e}")
+            return False
+
 
 class MockLLMProvider(BaseLLMProvider):
     """Mock 实现：基于检索结果模板化生成回答，无外部依赖"""
@@ -81,7 +101,9 @@ class OpenAIProvider(BaseLLMProvider):
         if not self._api_key:
             raise LLMProviderError("OpenAI API Key 未配置")
         self._model = model or settings.llm.openai_model
-        self._client = OpenAI(api_key=self._api_key, base_url=base_url)
+        self._base_url = base_url or settings.llm.openai_base_url if hasattr(settings.llm, 'openai_base_url') else None
+        self._client = OpenAI(api_key=self._api_key, base_url=self._base_url)
+        log.info(f"[LLM] OpenAIProvider 初始化完成: model={self._model}, base_url={self._base_url or 'default'}")
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None,
                  temperature: Optional[float] = None,
@@ -127,9 +149,10 @@ class OllamaProvider(BaseLLMProvider):
         try:
             import ollama
             self._client = ollama.Client(host=self._base_url)
+            log.info(f"[LLM] OllamaProvider 初始化完成: model={self._model}, base_url={self._base_url}, client=ollama")
         except ImportError:
-            # 退化为 HTTP 直连
             self._client = None
+            log.info(f"[LLM] OllamaProvider 初始化完成: model={self._model}, base_url={self._base_url}, client=httpx")
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None,
                  temperature: Optional[float] = None,
@@ -156,14 +179,16 @@ class GLMProvider(BaseLLMProvider):
     def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None,
                  base_url: Optional[str] = None) -> None:
         try:
-            from zhipuai import ZhipuAI
+            from zai import ZhipuAiClient
         except ImportError as e:
             raise LLMProviderError(f"请安装 zhipuai: {e}") from e
         self._api_key = api_key or settings.llm.glm_api_key
         if not self._api_key:
             raise LLMProviderError("GLM API Key 未配置")
         self._model = model or settings.llm.glm_model
-        self._client = ZhipuAI(api_key=self._api_key)
+        self._base_url = base_url or settings.llm.glm_base_url
+        self._client = ZhipuAiClient(api_key=self._api_key)
+        log.info(f"[LLM] GLMProvider 初始化完成: model={self._model}, base_url={self._base_url}")
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None,
                  temperature: Optional[float] = None,
@@ -178,7 +203,11 @@ class GLMProvider(BaseLLMProvider):
             resp = self._client.chat.completions.create(
                 model=self._model, messages=messages, temperature=temp, max_tokens=mt,
             )
-            return resp.choices[0].message.content or ""
+            msg = resp.choices[0].message
+            content = msg.content or ""
+            if not content and hasattr(msg, 'reasoning_content') and msg.reasoning_content:
+                content = msg.reasoning_content
+            return content
         except Exception as e:
             raise LLMProviderError(f"GLM 调用失败: {e}") from e
 
@@ -191,28 +220,138 @@ class GLMProvider(BaseLLMProvider):
         messages.append({"role": "user", "content": prompt})
         temp = temperature if temperature is not None else settings.llm.temperature
         mt = max_tokens if max_tokens is not None else settings.llm.max_tokens
-        try:
-            stream = self._client.chat.completions.create(
-                model=self._model, messages=messages, temperature=temp, max_tokens=mt, stream=True,
-            )
-            for chunk in stream:
-                if chunk.choices and chunk.choices[0].delta.content:
-                    yield chunk.choices[0].delta.content
-        except Exception as e:
-            raise LLMProviderError(f"GLM stream 失败: {e}") from e
+
+        import asyncio
+        import queue
+
+        q: queue.Queue[str | None] = queue.Queue(maxsize=32)
+
+        def _stream_sync():
+            try:
+                stream = self._client.chat.completions.create(
+                    model=self._model, messages=messages, temperature=temp, max_tokens=mt, stream=True,
+                )
+                for chunk in stream:
+                    if chunk.choices and chunk.choices[0].delta:
+                        delta = chunk.choices[0].delta
+                        content = delta.content or ""
+                        if not content and hasattr(delta, 'reasoning_content') and delta.reasoning_content:
+                            content = delta.reasoning_content
+                        if content:
+                            q.put(content)
+            except Exception as e:
+                q.put(f"[ERROR] {e}")
+            finally:
+                q.put(None)
+
+        asyncio.create_task(asyncio.to_thread(_stream_sync))
+
+        while True:
+            chunk = await asyncio.to_thread(q.get)
+            if chunk is None:
+                break
+            if chunk.startswith("[ERROR]"):
+                raise LLMProviderError(chunk[7:])
+            yield chunk
+
+
+def get_available_models() -> list[dict]:
+    """获取配置中所有可选的大模型列表"""
+    models = []
+    
+    if settings.llm.glm_api_key:
+        models.append({
+            "provider": "glm",
+            "model": settings.llm.glm_model,
+            "name": f"GLM ({settings.llm.glm_model})",
+            "base_url": settings.llm.glm_base_url,
+        })
+    
+    if settings.llm.openai_api_key:
+        models.append({
+            "provider": "openai",
+            "model": settings.llm.openai_model,
+            "name": f"OpenAI ({settings.llm.openai_model})",
+            "base_url": getattr(settings.llm, 'openai_base_url', None) or "https://api.openai.com/v1",
+        })
+    
+    models.append({
+        "provider": "ollama",
+        "model": settings.llm.ollama_model,
+        "name": f"Ollama ({settings.llm.ollama_model})",
+        "base_url": settings.llm.ollama_base_url,
+    })
+    
+    return models
+
+
+async def test_model_availability(provider: str, model: str, base_url: str = None) -> dict:
+    """测试指定大模型的可用性，30秒超时"""
+    import time
+    start = time.perf_counter()
+    
+    try:
+        if provider == "glm":
+            instance = GLMProvider(model=model, base_url=base_url)
+        elif provider == "openai":
+            instance = OpenAIProvider(model=model, base_url=base_url)
+        elif provider == "ollama":
+            instance = OllamaProvider(model=model, base_url=base_url)
+        elif provider == "mock":
+            instance = MockLLMProvider()
+        else:
+            return {"available": False, "error": f"未知 provider: {provider}", "latency_ms": 0}
+        
+        available = instance.ping(timeout=30.0)
+        elapsed = (time.perf_counter() - start) * 1000
+        
+        return {
+            "provider": provider,
+            "model": model,
+            "available": available,
+            "latency_ms": elapsed,
+            "error": None,
+        }
+    except Exception as e:
+        elapsed = (time.perf_counter() - start) * 1000
+        return {
+            "provider": provider,
+            "model": model,
+            "available": False,
+            "latency_ms": elapsed,
+            "error": str(e),
+        }
 
 
 @lru_cache(maxsize=1)
 def get_llm_provider() -> BaseLLMProvider:
     provider = settings.llm.provider.lower()
-    log.info(f"初始化 LLM Provider: {provider}")
+    model_name = getattr(settings.llm, f'{provider}_model', 'unknown')
+    base_url = getattr(settings.llm, f'{provider}_base_url', None)
+    log.info(f"初始化 LLM Provider: {provider}, 模型: {model_name}, BaseURL: {base_url or 'default'}")
     try:
         if provider == "glm":
-            return GLMProvider()
-        if provider == "openai":
-            return OpenAIProvider()
-        if provider == "ollama":
-            return OllamaProvider()
+            instance = GLMProvider()
+        elif provider == "openai":
+            instance = OpenAIProvider()
+        elif provider == "ollama":
+            instance = OllamaProvider()
+        else:
+            log.warning(f"未知 LLM Provider: {provider}")
+            return MockLLMProvider()
+
+        log.info(f"[LLM] 正在测试连接...")
+        import time
+        s = time.perf_counter()
+        if instance.ping():
+            elapsed = (time.perf_counter() - s) * 1000
+            log.info(f"[LLM] 连接测试成功! 延迟: {elapsed:.2f}ms, 模型: {model_name}")
+        else:
+            log.error(f"[LLM] 连接测试失败! 模型: {model_name}, 将降级为 Mock")
+            return MockLLMProvider()
+
+        return instance
     except Exception as e:
-        log.warning(f"LLM Provider {provider} 初始化失败，降级为 Mock: {e}")
-    return MockLLMProvider()
+        log.error(f"[LLM] 初始化或连接测试失败: {provider}({model_name}): {e}")
+        log.warning(f"[LLM] 将降级为 MockLLMProvider")
+        return MockLLMProvider()

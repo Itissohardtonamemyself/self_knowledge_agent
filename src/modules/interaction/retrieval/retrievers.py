@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Optional
 
 from ....core.config import settings
+from ....core.logging import log
 from ....db.vector_store import get_vector_store
 from ....db.cache import get_cache
 from ....modules.processing.embedder import get_embedder
@@ -123,10 +125,20 @@ class HybridRetriever(BaseRetriever):
     def retrieve(self, query: str, top_k: Optional[int] = None,
                  where: Optional[dict] = None,
                  query_vec: Optional[list[float]] = None) -> list[RetrievedChunk]:
+        start = time.perf_counter()
         k = top_k or settings.retrieval.rerank_top_k * 3
-        vec_results = self._vec.retrieve(query, top_k=max(k, 20), query_vec=query_vec)
-        kw_results = self._kw.retrieve(query, top_k=max(k, 20))
 
+        s = time.perf_counter()
+        vec_results = self._vec.retrieve(query, top_k=max(k, 20), query_vec=query_vec)
+        vec_time = (time.perf_counter() - s) * 1000
+        log.info(f"[RETRIEVE] 向量检索: {vec_time:.2f}ms, results={len(vec_results)}, top_k={max(k, 20)}, query_vec_provided={query_vec is not None}")
+
+        s = time.perf_counter()
+        kw_results = self._kw.retrieve(query, top_k=max(k, 20))
+        kw_time = (time.perf_counter() - s) * 1000
+        log.info(f"[RETRIEVE] 关键词检索: {kw_time:.2f}ms, results={len(kw_results)}, top_k={max(k, 20)}")
+
+        s = time.perf_counter()
         # RRF 融合
         k_rrf = 60
         merged: dict[str, tuple[float, RetrievedChunk]] = {}
@@ -151,9 +163,14 @@ class HybridRetriever(BaseRetriever):
         out: list[RetrievedChunk] = []
         if sorted_chunks:
             max_s = sorted_chunks[0][0] or 1.0
-            for s, c in sorted_chunks[:k]:
-                c.score = s / max_s
+            for s_val, c in sorted_chunks[:k]:
+                c.score = s_val / max_s
                 out.append(c)
+
+        merge_time = (time.perf_counter() - s) * 1000
+        total_time = (time.perf_counter() - start) * 1000
+        log.info(f"[RETRIEVE] RRF融合: {merge_time:.2f}ms, 最终结果={len(out)}, 总耗时={total_time:.2f}ms")
+
         return out
 
 

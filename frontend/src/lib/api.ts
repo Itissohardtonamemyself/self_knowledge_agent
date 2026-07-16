@@ -146,6 +146,12 @@ export const api = {
     request<any>('/chat', { method: 'POST', body: JSON.stringify(payload) }, 5 * 60000),
   search: (payload: any) =>
     request<any>('/search', { method: 'POST', body: JSON.stringify(payload) }),
+  listModels: () => request<any>('/models'),
+  testModel: (provider: string, model: string, base_url?: string) => {
+    const q = new URLSearchParams({ provider, model });
+    if (base_url) q.set('base_url', base_url);
+    return request<any>(`/models/test?${q.toString()}`, { method: 'POST' }, 35000);
+  },
 
   // ============ Memory ============
   getProfile: () => request<any>('/memory/profile'),

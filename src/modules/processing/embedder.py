@@ -108,7 +108,10 @@ class BGELocalEmbedder(BaseEmbedder):
 
     def embed_query(self, text: str) -> List[float]:
         try:
+            s = time.perf_counter()
             vec = self._MODEL.encode([text], normalize_embeddings=True)
+            elapsed = (time.perf_counter() - s) * 1000
+            log.info(f"[EMBEDDER] 编码查询向量: {elapsed:.2f}ms, text_len={len(text)}, dim={vec.shape[1]}, device={self._device}")
             return vec[0].tolist()
         except Exception as e:
             raise EmbeddingError(f"encode query 失败: {e}") from e

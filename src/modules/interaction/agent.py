@@ -4,6 +4,7 @@ import json
 import re
 import time
 import uuid
+import asyncio
 from typing import Optional, AsyncIterable
 from pathlib import Path
 
@@ -158,18 +159,53 @@ class RAGAgent:
 
     async def chat(self, db: AsyncSession, req: ChatRequest) -> ChatResponse:
         start = time.perf_counter()
-        # 1. 加载或创建会话
-        conv = await self._load_conversation(db, req.conv_id)
-        conv_id = conv.id
+        t0 = start
+        timing_log: list[tuple[str, float]] = []
 
-        # 2. 获取会话历史（短期记忆）
+        def _log_step(name: str):
+            nonlocal t0
+            elapsed = (time.perf_counter() - t0) * 1000
+            timing_log.append((name, elapsed))
+            t0 = time.perf_counter()
+
+        # 并行执行：加载会话 + 获取用户画像 + 检查向量库
+        from ...db.vector_store import get_vector_store
+
+        async def _get_conv():
+            s = time.perf_counter()
+            result = await self._load_conversation(db, req.conv_id)
+            log.info(f"[CHAT] 加载会话耗时: {(time.perf_counter() - s)*1000:.2f}ms, conv_id={result.id}")
+            return result
+
+        async def _get_profile():
+            s = time.perf_counter()
+            result = await self._memory.get_profile(db)
+            log.info(f"[CHAT] 获取用户画像耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+            return result
+
+        async def _check_chunks():
+            s = time.perf_counter()
+            result = vs.count_chunks()
+            log.info(f"[CHAT] 检查向量库耗时: {(time.perf_counter() - s)*1000:.2f}ms, chunk_count={result}")
+            return result
+
+        log.info(f"[CHAT] 开始处理请求: conv_id={req.conv_id}, mode={req.mode}, query_len={len(req.query)}")
+
+        vs = get_vector_store()
+        conv, profile, chunk_count = await asyncio.gather(
+            _get_conv(), _get_profile(), _check_chunks()
+        )
+        conv_id = conv.id
+        _log_step("并行初始化(会话/画像/向量库)")
+
+        # 获取会话历史（依赖会话ID，无法并行）
+        s = time.perf_counter()
         history_stmt = select(DbMsg).where(DbMsg.conv_id == conv_id).order_by(DbMsg.seq_no)
         history_msgs = list((await db.execute(history_stmt)).scalars().all())
+        log.info(f"[CHAT] 获取会话历史耗时: {(time.perf_counter() - s)*1000:.2f}ms, msg_count={len(history_msgs)}")
+        _log_step("获取会话历史")
 
-        # 3. 检查向量库是否为空，空库时直接返回模板提示
-        from ...db.vector_store import get_vector_store
-        vs = get_vector_store()
-        chunk_count = vs.count_chunks()
+        # 空库时直接返回模板提示
         if chunk_count == 0 and req.mode != "pure_llm":
             await self._append_message(db, conv, "user", req.query)
             answer_text = (
@@ -183,6 +219,8 @@ class RAGAgent:
             if conv.msg_count <= 2:
                 conv.title = req.query[:50]
             await db.commit()
+            _log_step("空库早返回")
+            log.info(f"[CHAT] 空库早返回，总耗时: {latency}ms")
             return ChatResponse(
                 conv_id=conv.id,
                 msg_id=uuid.uuid4().hex[:16],
@@ -198,24 +236,30 @@ class RAGAgent:
                 mode=req.mode,
             )
 
-        # 4. 计算查询向量（只计算一次）
+        # 计算查询向量（只计算一次）
+        s = time.perf_counter()
         query_vec = self._embedder.embed_query(req.query)
+        log.info(f"[CHAT] 计算查询向量耗时: {(time.perf_counter() - s)*1000:.2f}ms, vec_dim={len(query_vec) if query_vec else 0}")
+        _log_step("计算查询向量(embedding)")
 
-        # 5. 检索（使用预计算的查询向量）
+        # 检索（使用预计算的查询向量）
         chunks: list[RetrievedChunk] = []
         if req.mode != "pure_llm":
+            s = time.perf_counter()
             chunks = self._retriever.retrieve(
                 req.query, top_k=(req.top_k or settings.retrieval.rerank_top_k) * 3,
                 query_vec=query_vec,
             )
             chunks = [c for c in chunks if c.score >= settings.retrieval.score_threshold * 0.5]
             chunks = chunks[: settings.retrieval.rerank_top_k]
+            log.info(f"[CHAT] 向量检索耗时: {(time.perf_counter() - s)*1000:.2f}ms, retrieved={len(chunks)}, top_k={(req.top_k or settings.retrieval.rerank_top_k)*3}")
+        _log_step("向量检索(retrieval)")
 
         no_context = not chunks
 
-        # 6. 画像 + 长期记忆（复用查询向量）
-        profile = await self._memory.get_profile(db)
+        # 长期记忆（复用查询向量）
         long_term_memories: list[dict] = []
+        s = time.perf_counter()
         try:
             if chunks:
                 result = vs.search_memories(query_vec, top_k=settings.memory.long_term_top_k)
@@ -228,16 +272,27 @@ class RAGAgent:
                         "content": docs[i] if i < len(docs) else "",
                         "meta": metas[i] if i < len(metas) else {},
                     })
+            log.info(f"[CHAT] 长期记忆检索耗时: {(time.perf_counter() - s)*1000:.2f}ms, memories={len(long_term_memories)}")
         except Exception as e:
             log.debug(f"长期记忆检索跳过: {e}")
+            log.info(f"[CHAT] 长期记忆检索失败: {e}")
+        _log_step("长期记忆检索")
 
-        # 7. 写用户消息到 DB
+        # 写用户消息到 DB
+        s = time.perf_counter()
         await self._append_message(db, conv, "user", req.query)
+        log.info(f"[CHAT] 写用户消息到DB耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+        _log_step("写用户消息到DB")
 
-        # 8. LLM 生成
+        # LLM 生成
+        s = time.perf_counter()
         context_text, indexed_chunks, profile_text, short_text, long_text = self._build_context(
             chunks, profile, history_msgs, long_term_memories,
         )
+        log.info(f"[CHAT] 构建上下文耗时: {(time.perf_counter() - s)*1000:.2f}ms, context_len={len(context_text)}, profile_len={len(profile_text)}")
+        _log_step("构建上下文")
+
+        answer_text = ""
         if req.mode == "search_only":
             answer_lines = ["根据你的问题，我检索到以下相关知识片段：\n"]
             for i, c in enumerate(indexed_chunks, 1):
@@ -248,34 +303,53 @@ class RAGAgent:
                 if req.mode == "search_only" else ""
             )
             answer_text = "\n".join(answer_lines)
+            log.info(f"[CHAT] search_only 模式，直接构建回答: answer_len={len(answer_text)}")
         else:
             system_prompt, user_prompt = self._render_rag_prompt(
                 req.query, context_text, profile_text, short_text, long_text,
             )
-            answer_text = self._llm.generate(
+            log.info(f"[CHAT] 构建Prompt完成: system_len={len(system_prompt)}, user_len={len(user_prompt)}")
+
+            s_llm = time.perf_counter()
+            answer_text = await asyncio.to_thread(
+                self._llm.generate,
                 user_prompt, system_prompt=system_prompt,
                 temperature=req.temperature,
             )
+            llm_time = (time.perf_counter() - s_llm) * 1000
+            log.info(f"[CHAT] LLM生成耗时: {llm_time:.2f}ms, answer_len={len(answer_text)}, model={settings.llm.provider}:{getattr(settings.llm, f'{settings.llm.provider}_model', 'unknown')}")
             if no_context and "未找到相关" not in answer_text and "不足" not in answer_text:
                 if answer_text and len(answer_text) < 1000:
                     pass
+        _log_step("LLM生成")
 
-        # 9. 解析引用
+        # 解析引用
+        s = time.perf_counter()
         answer_clean, citations = self._resolve_citations(answer_text, indexed_chunks)
-        if no_context:
-            pass
+        log.info(f"[CHAT] 解析引用耗时: {(time.perf_counter() - s)*1000:.2f}ms, citations={len(citations)}")
+        _log_step("解析引用")
 
-        # 10. 建议追问
+        # 建议追问
+        s = time.perf_counter()
         follow_ups = self._generate_follow_ups(req.query, indexed_chunks)
+        log.info(f"[CHAT] 生成追问耗时: {(time.perf_counter() - s)*1000:.2f}ms, follow_ups={len(follow_ups)}")
+        _log_step("生成追问")
+
+        # 写助手消息
+        s = time.perf_counter()
         latency = int((time.perf_counter() - start) * 1000)
         tokens = estimate_tokens(req.query) + estimate_tokens(answer_clean)
-
-        # 11. 写助手消息
         await self._append_message(db, conv, "assistant", answer_clean, refs=citations,
                                    tokens=tokens, latency_ms=latency)
         if conv.msg_count <= 2:
             conv.title = req.query[:50]
         await db.commit()
+        log.info(f"[CHAT] 写助手消息到DB耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+        _log_step("写助手消息到DB")
+
+        # 汇总日志
+        timing_summary = ", ".join([f"{name}={t:.1f}ms" for name, t in timing_log])
+        log.info(f"[CHAT] 总耗时: {latency}ms | {timing_summary}")
 
         return ChatResponse(
             conv_id=conv.id,
@@ -291,20 +365,53 @@ class RAGAgent:
     async def chat_stream(self, db: AsyncSession, req: ChatRequest) -> AsyncIterable[dict]:
         """流式输出事件：phase / token / citations / done"""
         start = time.perf_counter()
-        conv = await self._load_conversation(db, req.conv_id)
-        conv_id = conv.id
+        t0 = start
+        timing_log: list[tuple[str, float]] = []
 
+        def _log_step(name: str):
+            nonlocal t0
+            elapsed = (time.perf_counter() - t0) * 1000
+            timing_log.append((name, elapsed))
+            t0 = time.perf_counter()
+
+        log.info(f"[CHAT_STREAM] 开始处理请求: conv_id={req.conv_id}, mode={req.mode}, query_len={len(req.query)}")
+
+        # 并行执行：加载会话 + 检查向量库
+        from ...db.vector_store import get_vector_store
+
+        async def _get_conv():
+            s = time.perf_counter()
+            result = await self._load_conversation(db, req.conv_id)
+            log.info(f"[CHAT_STREAM] 加载会话耗时: {(time.perf_counter() - s)*1000:.2f}ms, conv_id={result.id}")
+            return result
+
+        async def _check_chunks():
+            s = time.perf_counter()
+            result = vs.count_chunks()
+            log.info(f"[CHAT_STREAM] 检查向量库耗时: {(time.perf_counter() - s)*1000:.2f}ms, chunk_count={result}")
+            return result
+
+        vs = get_vector_store()
+        conv, chunk_count = await asyncio.gather(_get_conv(), _check_chunks())
+        conv_id = conv.id
+        _log_step("并行初始化(会话/向量库)")
+
+        # 获取会话历史（依赖会话ID，无法并行）
+        s = time.perf_counter()
         history_stmt = select(DbMsg).where(DbMsg.conv_id == conv_id).order_by(DbMsg.seq_no)
         history_msgs = list((await db.execute(history_stmt)).scalars().all())
+        log.info(f"[CHAT_STREAM] 获取会话历史耗时: {(time.perf_counter() - s)*1000:.2f}ms, msg_count={len(history_msgs)}")
+        _log_step("获取会话历史")
 
         # 检查向量库是否为空，空库时直接返回模板提示
-        from ...db.vector_store import get_vector_store
-        vs = get_vector_store()
-        chunk_count = vs.count_chunks()
         if chunk_count == 0 and req.mode != "pure_llm":
             yield {"type": "chat.phase", "data": {"phase": "retrieving"}}
             yield {"type": "search.results", "data": {"chunks": []}}
+
+            s = time.perf_counter()
             await self._append_message(db, conv, "user", req.query)
+            log.info(f"[CHAT_STREAM] 写用户消息到DB耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+
             answer_text = (
                 "根据当前知识库未找到相关内容。请尝试上传相关文档或换一种提问方式。\n\n"
                 "提示：你可以通过「文档导入」功能添加 PDF、Word、Markdown、TXT 或网页链接，"
@@ -318,12 +425,20 @@ class RAGAgent:
                 "如何批量导入我的本地文件夹？",
                 "除了本地文件，还能接入哪些数据源？",
             ]}}
+
+            s = time.perf_counter()
             latency = int((time.perf_counter() - start) * 1000)
             tokens = estimate_tokens(req.query) + estimate_tokens(answer_text)
             await self._append_message(db, conv, "assistant", answer_text, tokens=tokens, latency_ms=latency)
             if conv.msg_count <= 2:
                 conv.title = req.query[:50]
             await db.commit()
+            log.info(f"[CHAT_STREAM] 写助手消息到DB耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+
+            _log_step("空库早返回")
+            timing_summary = ", ".join([f"{name}={t:.1f}ms" for name, t in timing_log])
+            log.info(f"[CHAT_STREAM] 空库早返回，总耗时: {latency}ms | {timing_summary}")
+
             yield {"type": "chat.done", "data": {
                 "msg_id": uuid.uuid4().hex[:16], "conv_id": conv.id,
                 "tokens": tokens, "latency_ms": latency, "answer": answer_text,
@@ -333,17 +448,23 @@ class RAGAgent:
         yield {"type": "chat.phase", "data": {"phase": "retrieving"}}
 
         # 计算查询向量（只计算一次）
+        s = time.perf_counter()
         query_vec = self._embedder.embed_query(req.query)
+        log.info(f"[CHAT_STREAM] 计算查询向量耗时: {(time.perf_counter() - s)*1000:.2f}ms, vec_dim={len(query_vec) if query_vec else 0}")
+        _log_step("计算查询向量(embedding)")
 
         # 检索（使用预计算的查询向量）
         chunks: list[RetrievedChunk] = []
         if req.mode != "pure_llm":
+            s = time.perf_counter()
             chunks = self._retriever.retrieve(
                 req.query, top_k=(req.top_k or settings.retrieval.rerank_top_k) * 3,
                 query_vec=query_vec,
             )
             chunks = [c for c in chunks if c.score >= settings.retrieval.score_threshold * 0.5]
             chunks = chunks[: settings.retrieval.rerank_top_k]
+            log.info(f"[CHAT_STREAM] 向量检索耗时: {(time.perf_counter() - s)*1000:.2f}ms, retrieved={len(chunks)}, top_k={(req.top_k or settings.retrieval.rerank_top_k)*3}")
+        _log_step("向量检索(retrieval)")
 
         # 返回检索结果供前端展示
         def _to_dict(c: RetrievedChunk) -> dict:
@@ -355,7 +476,14 @@ class RAGAgent:
             }
         yield {"type": "search.results", "data": {"chunks": [_to_dict(c) for c in chunks]}}
 
+        # 获取用户画像
+        s = time.perf_counter()
         profile = await self._memory.get_profile(db)
+        log.info(f"[CHAT_STREAM] 获取用户画像耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+        _log_step("获取用户画像")
+
+        # 长期记忆检索
+        s = time.perf_counter()
         long_term_memories: list[dict] = []
         try:
             if chunks:
@@ -364,44 +492,80 @@ class RAGAgent:
                 docs = r.get("documents", [[]])[0]
                 for i in range(len(ids)):
                     long_term_memories.append({"id": ids[i], "content": docs[i] if i < len(docs) else ""})
-        except Exception:
-            pass
+            log.info(f"[CHAT_STREAM] 长期记忆检索耗时: {(time.perf_counter() - s)*1000:.2f}ms, memories={len(long_term_memories)}")
+        except Exception as e:
+            log.info(f"[CHAT_STREAM] 长期记忆检索失败: {e}")
+        _log_step("长期记忆检索")
 
+        # 写用户消息到DB
+        s = time.perf_counter()
         await self._append_message(db, conv, "user", req.query)
+        log.info(f"[CHAT_STREAM] 写用户消息到DB耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+        _log_step("写用户消息到DB")
 
+        # 构建上下文
+        s = time.perf_counter()
         context_text, indexed_chunks, profile_text, short_text, long_text = self._build_context(
             chunks, profile, history_msgs, long_term_memories,
         )
+        log.info(f"[CHAT_STREAM] 构建上下文耗时: {(time.perf_counter() - s)*1000:.2f}ms, context_len={len(context_text)}")
+        _log_step("构建上下文")
 
         yield {"type": "chat.phase", "data": {"phase": "generating"}}
 
+        # 构建Prompt
+        s = time.perf_counter()
         system_prompt, user_prompt = self._render_rag_prompt(
             req.query, context_text, profile_text, short_text, long_text,
         )
+        log.info(f"[CHAT_STREAM] 构建Prompt耗时: {(time.perf_counter() - s)*1000:.2f}ms, system_len={len(system_prompt)}, user_len={len(user_prompt)}")
+        _log_step("构建Prompt")
 
         # 生成
+        s_llm = time.perf_counter()
         full_text_parts: list[str] = []
+        token_count = 0
         async for token in self._llm.astream(
             user_prompt, system_prompt=system_prompt, temperature=req.temperature,
         ):
             full_text_parts.append(token)
+            token_count += 1
             yield {"type": "chat.token", "data": {"token": token}}
 
+        llm_time = (time.perf_counter() - s_llm) * 1000
         answer_full = "".join(full_text_parts)
+        log.info(f"[CHAT_STREAM] LLM流式生成耗时: {llm_time:.2f}ms, token_count={token_count}, answer_len={len(answer_full)}, model={settings.llm.provider}:{getattr(settings.llm, f'{settings.llm.provider}_model', 'unknown')}")
+        _log_step("LLM流式生成")
+
+        # 解析引用
+        s = time.perf_counter()
         answer_clean, citations = self._resolve_citations(answer_full, indexed_chunks)
+        log.info(f"[CHAT_STREAM] 解析引用耗时: {(time.perf_counter() - s)*1000:.2f}ms, citations={len(citations)}")
         yield {"type": "citations", "data": {"refs": [c.model_dump() for c in citations]}}
+        _log_step("解析引用")
 
+        # 生成追问
+        s = time.perf_counter()
         follow_ups = self._generate_follow_ups(req.query, indexed_chunks)
+        log.info(f"[CHAT_STREAM] 生成追问耗时: {(time.perf_counter() - s)*1000:.2f}ms, follow_ups={len(follow_ups)}")
         yield {"type": "follow_ups", "data": {"questions": follow_ups}}
+        _log_step("生成追问")
 
+        # 写助手消息到DB
+        s = time.perf_counter()
         latency = int((time.perf_counter() - start) * 1000)
         tokens = estimate_tokens(req.query) + estimate_tokens(answer_clean)
-
         await self._append_message(db, conv, "assistant", answer_clean, refs=citations,
                                    tokens=tokens, latency_ms=latency)
         if conv.msg_count <= 2:
             conv.title = req.query[:50]
         await db.commit()
+        log.info(f"[CHAT_STREAM] 写助手消息到DB耗时: {(time.perf_counter() - s)*1000:.2f}ms")
+        _log_step("写助手消息到DB")
+
+        # 汇总日志
+        timing_summary = ", ".join([f"{name}={t:.1f}ms" for name, t in timing_log])
+        log.info(f"[CHAT_STREAM] 总耗时: {latency}ms | {timing_summary}")
 
         yield {"type": "chat.done", "data": {
             "msg_id": uuid.uuid4().hex[:16], "conv_id": conv.id,

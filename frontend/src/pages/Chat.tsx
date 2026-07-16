@@ -14,6 +14,9 @@ import {
   ChevronDown,
   MessageSquare,
   Menu,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -60,6 +63,10 @@ export default function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
+  const [models, setModels] = useState<{ provider: string; model: string; name: string; base_url?: string; available?: boolean; latency_ms?: number; error?: string }[]>([]);
+  const [selectedModel, setSelectedModel] = useState<{ provider: string; model: string; base_url?: string } | null>(null);
+  const [testingModel, setTestingModel] = useState<string | null>(null);
+
   const filteredConvs = useMemo(() => {
     if (!query.trim()) return conversations;
     const q = query.trim().toLowerCase();
@@ -77,6 +84,47 @@ export default function Chat() {
       }
     })();
   }, []); // eslint-disable-line
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.listModels();
+        const modelList = Array.isArray(res) ? res : [];
+        setModels(modelList);
+        if (modelList.length > 0) {
+          setSelectedModel({ provider: modelList[0].provider, model: modelList[0].model, base_url: modelList[0].base_url });
+        }
+      } catch (e: any) {
+        console.error('加载模型列表失败:', e);
+      }
+    })();
+  }, []);
+
+  const testModel = async (model: typeof models[0]) => {
+    setTestingModel(`${model.provider}-${model.model}`);
+    try {
+      const result = await api.testModel(model.provider, model.model, model.base_url);
+      setModels(ms => ms.map(m => 
+        m.provider === model.provider && m.model === model.model 
+          ? { ...m, available: result.available, latency_ms: result.latency_ms, error: result.error }
+          : m
+      ));
+      if (result.available) {
+        push('success', `${model.name} 连接测试成功！延迟: ${result.latency_ms?.toFixed(1) || 0}ms`);
+      } else {
+        push('error', `${model.name} 连接测试失败: ${result.error || '未知错误'}`);
+      }
+    } catch (e: any) {
+      setModels(ms => ms.map(m => 
+        m.provider === model.provider && m.model === model.model 
+          ? { ...m, available: false, error: e.message, latency_ms: 0 }
+          : m
+      ));
+      push('error', `${model.name} 连接测试失败: ${e.message}`);
+    } finally {
+      setTestingModel(null);
+    }
+  };
 
   useEffect(() => {
     const id = params.conversationId;
@@ -244,6 +292,73 @@ export default function Chat() {
                 className="input !pl-9 !py-2"
                 placeholder="搜索对话历史…"
               />
+            </div>
+          </div>
+
+          <div className="p-3 border-b border-slate-100">
+            <div className="text-xs font-medium text-slate-500 mb-2 flex items-center gap-1">
+              <Brain className="w-3.5 h-3.5" /> 大模型选择
+            </div>
+            <select
+              value={selectedModel ? `${selectedModel.provider}-${selectedModel.model}` : ''}
+              onChange={(e) => {
+                const [provider, model] = e.target.value.split('-');
+                const m = models.find(x => x.provider === provider && x.model === model);
+                if (m) {
+                  setSelectedModel({ provider: m.provider, model: m.model, base_url: m.base_url });
+                }
+              }}
+              className="input w-full text-sm"
+            >
+              {models.map((m) => (
+                <option key={`${m.provider}-${m.model}`} value={`${m.provider}-${m.model}`}>
+                  {m.name} {m.available === true && '✓'} {m.available === false && '✗'}
+                </option>
+              ))}
+            </select>
+            {selectedModel && (
+              <div className="mt-2 flex gap-1">
+                {models.map((m) => {
+                  const isSelected = selectedModel.provider === m.provider && selectedModel.model === m.model;
+                  const isTesting = testingModel === `${m.provider}-${m.model}`;
+                  return (
+                    <button
+                      key={`${m.provider}-${m.model}`}
+                      onClick={() => {
+                        if (!isSelected) {
+                          setSelectedModel({ provider: m.provider, model: m.model, base_url: m.base_url });
+                        } else if (!isTesting) {
+                          testModel(m);
+                        }
+                      }}
+                      className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition ${
+                        isSelected
+                          ? 'bg-primary-100 text-primary-700 border border-primary-200'
+                          : 'bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200'
+                      }`}
+                      disabled={isTesting}
+                    >
+                      {isTesting ? (
+                        <Loader2 className="w-3 h-3 animate-spin mx-auto" />
+                      ) : m.available === true ? (
+                        <CheckCircle2 className="w-3 h-3 mx-auto text-emerald-500" />
+                      ) : m.available === false ? (
+                        <XCircle className="w-3 h-3 mx-auto text-red-500" />
+                      ) : (
+                        <AlertCircle className="w-3 h-3 mx-auto text-amber-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="mt-2 text-[11px] text-slate-400">
+              {selectedModel
+                ? `当前: ${models.find(m => m.provider === selectedModel.provider && m.model === selectedModel.model)?.name}`
+                : '请选择一个模型'}
+              {models.find(m => m.provider === selectedModel?.provider && m.model === selectedModel?.model)?.latency_ms && (
+                <span className="ml-1">· 延迟: {(models.find(m => m.provider === selectedModel?.provider && m.model === selectedModel?.model)?.latency_ms || 0).toFixed(0)}ms</span>
+              )}
             </div>
           </div>
           <div className="flex-1 overflow-y-auto p-2 space-y-1">

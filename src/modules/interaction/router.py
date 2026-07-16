@@ -15,6 +15,7 @@ from ...schemas.conversation import (
 from ...core.logging import log
 from ...core.exceptions import AppBaseException, to_http_exception
 from .service import InteractionService
+from .llm.provider import get_available_models, test_model_availability
 
 router = APIRouter(tags=["智能交互层 Interaction"])
 _service = InteractionService()
@@ -119,6 +120,29 @@ async def ws_chat(websocket: WebSocket):
             await websocket.close()
         except Exception:
             pass
+
+
+# ========== 模型管理 ==========
+@router.get("/models", response_model=ApiResponse[list[dict]])
+async def list_models():
+    """获取所有可用的大模型列表"""
+    try:
+        models = get_available_models()
+        return ApiResponse.success(models)
+    except Exception as e:
+        log.exception("list_models")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/models/test", response_model=ApiResponse[dict])
+async def test_model(provider: str, model: str, base_url: str = None):
+    """测试指定大模型的可用性"""
+    try:
+        result = await test_model_availability(provider, model, base_url)
+        return ApiResponse.success(result)
+    except Exception as e:
+        log.exception("test_model")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ========== 独立检索 ==========

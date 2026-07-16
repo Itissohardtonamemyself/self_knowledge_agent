@@ -509,9 +509,9 @@ Agent = {
       → LLM 改写 + 扩展成 3-5 个子查询
       ↓
     [Step 2] 混合检索器 (HybridRetriever)
-      → 向量检索 top_k=20 + 关键词检索 top_k=20
+      → 向量检索 top_k=12 + 关键词检索 top_k=12
       → Reciprocal Rank Fusion (RRF) 融合
-      → BGE-Reranker 重排序 → top_k=6
+      → BGE-Reranker 重排序 → top_k=4
       ↓
     [Step 3] 上下文构建
       → 用户画像注入 + 短期记忆 + 检索结果
