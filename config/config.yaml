@@ -47,8 +47,8 @@ llm:
   glm_base_url: "https://open.bigmodel.cn/api/paas/v4/"
 
 retrieval:
-  vector_top_k: 20
-  rerank_top_k: 6
+  vector_top_k: 12
+  rerank_top_k: 4
   hybrid_alpha: 0.6
   score_threshold: 0.3
 
